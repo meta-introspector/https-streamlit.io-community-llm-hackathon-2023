@@ -1,1 +1,2 @@
 orgparse==0.3.2
+clarifai-grpc

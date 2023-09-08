@@ -1,16 +1,17 @@
+import os
 import streamlit as st
 from clarifai_utils.modules.css import ClarifaiStreamlitCSS
 from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2
-from langchain.llms import OpenAI
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import StreamlitCallbackHandler
-from langchain.llms import Clarifai
-from langchain import PromptTemplate, LLMChain
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory, ChatMessageHistory
-from langchain.schema import HumanMessage, AIMessage
-import streamlit.components.v1 as components
+#from langchain.llms import OpenAI
+#from langchain.agents import AgentType, initialize_agent, load_tools
+#from langchain.callbacks import StreamlitCallbackHandler
+#from langchain.llms import Clarifai
+#from langchain import PromptTemplate, LLMChain
+#from langchain.chains import ConversationChain
+#from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+#from langchain.schema import HumanMessage, AIMessage
+#import streamlit.components.v1 as components
 
 
 # from https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
@@ -102,8 +103,8 @@ def ooda():
 
 st.set_page_config(layout="wide")
 
-os.environ["CLARIFAI_PAT"] = api_key
-client = User(user_id=CREATE_APP_USER_ID)
+os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
+client = User(user_id=st.secrets["clarifai_user_id"])
 apps = client.list_apps()
 
 
