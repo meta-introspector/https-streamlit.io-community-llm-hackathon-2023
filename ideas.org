@@ -1,13 +1,24 @@
 * draft ideas
 ** org mode ftw
+*** we can use org mode as the overarching plan that includes all other files.
+Each file can be a perspective to look at the system.
+Each line a different nuance.
+We can see them as filters and groupings and relationships and paths followed in a proof.
+See section below for proof information.
+
 ** introspector perspective
 *** list of sliders for dimensions, each has an emoji and default, each is coefficient in polynomial or tensor
 *** rendering with streamlit
-using graphics to display memory and pointers
-points are then clickable
 
-*** sliders for object ids as points of memory, show pointers between memory, 
+**** points are then clickable
+
+*** sliders for object ids as points of memory, show pointers between memory,
+**** using graphics to display memory and pointers
+
 *** projection of awareness into a 9d hyperplane.
+the view vector as a series of emojis that make a path
+each one adds a nuance to the view. abiility to traverse forloops/groups/maps/folds!
+
 *** each input is mapped into a hyperplane of 9d, a point there.
 *** each point is a 8d hypersphere.
 *** we can project them as points on a line or 2d or 3d.
@@ -35,6 +46,12 @@ git rebase
 
 ** interface to open-assistent.io , you.com, huggingface.co backend or front ends like bard, bing, chatgpt, etc.
 todo
+
+*** interface to local llm via the git/yaml interface
+*** be able to intercept the api calls and mark them up in yaml.
+*** wireshark to yaml/emojis and back
+*** capture strace and all types of diagnostics
+*** think datadog agent
 
 ** be able to deploy via terraform
 todo
@@ -72,6 +89,9 @@ cat file | grep | import "dataset"
 *** be able to download executable
 
 * Proof
+the proof is following a simpler path in a numerical model that simulates the complex path of the program.
+dual representation, digital twins, bi-simulation.
+
 ** Coq/metacoq
 ** Template haskell
 ** consider if we can treat two executions or logs as bisimulation for coinduction between proofs or executions as harmonies.
