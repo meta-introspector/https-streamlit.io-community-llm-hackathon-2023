@@ -1,2 +1,4 @@
 orgparse==0.3.2
 clarifai-grpc
+clarifai==9.5.3
+streamlit-diff-viewer==0.0.2
