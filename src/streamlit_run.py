@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 from streamlit_js_eval import streamlit_js_eval, copy_to_clipboard, create_share_link, get_geolocation
 
 URL1="https://org-clarifai.streamlit.app/?embed=true"
-url = st.experimental_get_query_params().get("url", URL1)[0]
+url = st.experimental_get_query_params().get("url", URL1)
 new_url = st.text_input("Enter a new URL of a Streamlit app", value=url)
 frame = components.iframe(new_url, width=500, height=400)
 
