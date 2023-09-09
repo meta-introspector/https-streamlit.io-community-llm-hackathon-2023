@@ -2,23 +2,29 @@ import streamlit as st
 import requests
 import re
 import streamlit.components.v1 as components
+from streamlit_js_eval import streamlit_js_eval, copy_to_clipboard, create_share_link, get_geolocation
 
 URL1="https://org-clarifai.streamlit.app/?embed=true"
-
-# Get the URL of the app to run from the query parameter or use a default value
-url = st.experimental_get_query_params().get("url", URL1)
-
-# Display a text input to let the user enter a new URL
+url = st.experimental_get_query_params().get("url", URL1)[0]
 new_url = st.text_input("Enter a new URL of a Streamlit app", value=url)
+frame = components.iframe(new_url, width=500, height=400)
 
-# embed streamlit docs in a streamlit app
-components.iframe(new_url, width=500, height=400)
+st.write(str(frame))
+st.write(dir(frame))
+#for x in dir(frame):
+#    st.write(x,str(getattr(frame,x)))
+#    st.write(x,str(help(getattr(frame,x))))
 
-#Once the iframe is embedded, you can access the data from the embedded app using the `st.session_state` object. For example, if the embedded app has a variable called `data`, you can access it in your app as follows:
+hs = st.text_input("Enter a new URL of a Streamlit app", value="'hi'")    
+#streamlit_js_eval(hs)
+st.write(f"IN {hs}")
+hs1 = streamlit_js_eval(
+    js_expressions=hs,
+    key = 'SCR'
+)
+st.write(f"OUT {hs1}")
 
-for d in st.session_state:
-    data = st.session_state[d]
-    st.write(d,data)
+
 st.write(new_url)
     
 # Run the app and get the output as a string
@@ -37,5 +43,4 @@ st.write(new_url)
 #st.write(data)
 # Set the new URL as a query parameter for the current app
 
-st.experimental_set_query_params(
-    url =new_url)
+#st.experimental_set_query_params(    url =new_url)
