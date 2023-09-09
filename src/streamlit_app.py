@@ -1,18 +1,8 @@
 import os
+from collections.abc import Iterable
 import streamlit as st
-from clarifai_utils.modules.css import ClarifaiStreamlitCSS
 from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2
-#from langchain.llms import OpenAI
-#from langchain.agents import AgentType, initialize_agent, load_tools
-#from langchain.callbacks import StreamlitCallbackHandler
-#from langchain.llms import Clarifai
-#from langchain import PromptTemplate, LLMChain
-#from langchain.chains import ConversationChain
-#from langchain.memory import ConversationBufferMemory, ChatMessageHistory
-#from langchain.schema import HumanMessage, AIMessage
-#import streamlit.components.v1 as components
-
 
 # from https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
 def check_password():
@@ -46,74 +36,128 @@ def check_password():
 
 def doapply(data):
     for x in data:
-        x.apply()
+        if isinstance(x,str):
+            st.write(x)
+            yield x
+        else:
+            if hasattr(x,"apply"):
+                yield from x.apply()
+            else:
+                st.write(x)
+                yield x
 
 
 def act(data):
-    yield from doapply(data)  # apply those changes to the api
+    if not data:
+        return
+    for data1 in data:
+        
+        yield from doapply(data1)  # apply those changes to the api
 
-
-def select(data):
-
+seen = {}
+def myselect(data):
     todo = []
-    for f in data:
-        todo.append(f)
+    key = str(data)
+    if isinstance(data,str):
+        options = st.button(data,
+                            key=key + "button"
+                            )
+    else:
 
-    options = st.multiselect("Please select", todo)
+        
+        for f in data:
+            todo.append(f)
 
-    st.write("You selected:", options)
+        if key not in seen:
+            st.write(data)
+            options = st.multiselect(
+                "Please select",todo,
+                key=key
+            )
+            seen[key] = options
+            st.write("You selected:", options)
+            yield options
 
 
 def decide(data):
-    yield from select(data)  # let the user select which ones
+    if data:
+        if not hasattr(data, '__iter__'):
+            #print("The object is iterable.")
+            if not isinstance(data, Iterable):
+                #print("The object is iterable.")
+                #else:
+                data = [ "Just" + str(data) ]
+                yield myselect(data)  # let the user select which ones
+                return
+            
+            for data1 in data:
+                yield from myselect(data1)  # let the user select which ones
 
+def summarize(data):
+    for x in data:
+        yield x
+def sort(data):
+    for x in data:
+        yield x
+def filtering(data):
+    for x in data:
+        yield x
 
+        
 def orient(data):
     yield from summarize(sort(filtering(data)))  # show a summary of the data
 
 
 def apps():
-    # list the apps we have access to 
-    pass
+    # list the apps we have access to
+    for app in our_apps:
+        yield app
 
-# populate
-# instructions_data = load_prompt_lists(prompts_dataset())
+def datasets(app):
+    yield "dataset_of_datasets_for" + app.name
 
-
-# from prompts import
-#instructions_data = {
-#    # key are prompt lists
-#}
-
-
-#def prompts():
-#    pass
-
-
-def datasets(filter):
-    pass
+def inputs(dataset):
+    for x in ("inputa","inputb"):
+        yield dataset + x
 
 def observe():
-    yield from inputs(datasets(apps()))  # observe all the data
-
+    for app in apps():
+        st.write(app)
+        for dataset in datasets(app):
+            for input in inputs(dataset):
+                yield [ app , dataset, input ]
 
 def ooda():
-    act(decide(orient(observe())))  # do it all
-
+    for sample in observe():
+        for oriented in orient(sample):
+            for decision in decide(oriented):
+                yield from act(decision)
 
 st.set_page_config(layout="wide")
 
 os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
 client = User(user_id=st.secrets["clarifai_user_id"])
-apps = client.list_apps()
+our_apps = client.list_apps()
 
 
-if check_password():
-    for action in ooda():
-        action.report()
+#if check_password():
+if True: # skip password for now
+    for x in ooda():
+        if isinstance(x,str):
+            st.write(x)
+            #yield x
+        else:
+            if hasattr(x,"apply"):
+                for x in  x.apply():
+                    st.write(x)
+            else:
+                st.write(x)
 
+
+                #action.report()
+models = {}
 dataset_index = {}
-for app in apps:
+for app in our_apps:
     datasets = app.list_datasets()
     for ds in datasets:
         name = ds.dataset_info.id
@@ -156,145 +200,5 @@ def get_default_models():
     return models_map, select_map
 
 
-# After every input from user, the streamlit page refreshes by default which is unavoidable.
-# Due to this, all the previous msgs from the chat disappear and the context is lost from LLM's memory.
-# Hence, we need to save the history in seession_state and re-initialize LLM's memory with it.
-def show_previous_chats():
-    # Display previous chat messages and store them into memory
-    chat_list = []
-    for message in st.session_state["chat_history"]:
-        with st.chat_message(message["role"]):
-            if message["role"] == "user":
-                msg = HumanMessage(content=message["content"])
-            else:
-                msg = AIMessage(content=message["content"])
-            chat_list.append(msg)
-            st.write(message["content"])
-    conversation.memory.chat_memory = ChatMessageHistory(messages=chat_list)
 
 
-def chatbot():
-    if message := st.chat_input(key="input"):
-        st.chat_message("user").write(message)
-        st.session_state["chat_history"].append({"role": "user", "content": message})
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                response = conversation.predict(
-                    input=message, chat_history=st.session_state["chat_history"]
-                )
-                # llama response format if different. It seems like human-ai chat examples are appended after the actual response.
-                if st.session_state["chosen_llm"].find("lama") > -1:
-                    response = response.split("Human:", 1)[0]
-                st.text(response)
-                message = {"role": "assistant", "content": response}
-                st.session_state["chat_history"].append(message)
-        st.write("\n***\n")
-
-
-def oldmain():
-    prompt_list = list(instructions_data.keys())
-    pat = load_pat()
-    models_map, select_map = get_default_models()
-    default_llm = "GPT-4"
-    llms_map = {"Select an LLM": None}
-    llms_map.update(select_map)
-
-    chosen_instruction_key = st.selectbox(
-        "Select a prompt",
-        options=prompt_list,
-        index=(
-            prompt_list.index(st.session_state["chosen_instruction_key"])
-            if "chosen_instruction_key" in st.session_state
-            else 0
-        ),
-    )
-
-    # Save the chosen option into the session state
-    st.session_state["chosen_instruction_key"] = chosen_instruction_key
-
-    if st.session_state["chosen_instruction_key"] != "Select a prompt":
-        instruction_title = instructions_data[chosen_instruction_key]["title"]
-        instruction = instructions_data[chosen_instruction_key]["instruction"]
-
-        ClarifaiStreamlitCSS.insert_default_css(st)
-
-        with open("./styles.css") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-        if "chosen_llm" not in st.session_state.keys():
-            chosen_llm = st.selectbox(label="Select an LLM", options=llms_map.keys())
-            if chosen_llm and llms_map[chosen_llm] is not None:
-                if "chosen_llm" in st.session_state.keys():
-                    st.session_state["chosen_llm"] = None
-                st.session_state["chosen_llm"] = llms_map[chosen_llm]
-
-    if "chosen_llm" in st.session_state.keys():
-        cur_llm = st.session_state["chosen_llm"]
-        st.title(f"{instruction_title} {cur_llm}")
-        llm = Clarifai(
-            pat=pat,
-            user_id=models_map[cur_llm]["author"],
-            app_id=models_map[cur_llm]["app"],
-            model_id=cur_llm,
-        )
-    else:
-        llm = Clarifai(
-            pat=pat, user_id="openai", app_id="chat-completion", model_id=default_llm
-        )
-
-    # Access instruction by key
-    instruction = instructions_data[st.session_state["chosen_instruction_key"]][
-        "instruction"
-    ]
-
-    template = f"""{instruction} + {{chat_history}}
-    Human: {{input}}
-    AI Assistant:"""
-
-    prompt = PromptTemplate(
-        template=template, input_variables=["chat_history", "input"]
-    )
-
-    template = f"""{instruction} + {{chat_history}}
-    Human: {{input}}
-    AI Assistant:"""
-
-    conversation = ConversationChain(
-        prompt=prompt,
-        llm=llm,
-        verbose=True,
-        memory=ConversationBufferMemory(
-            ai_prefix="AI Assistant", memory_key="chat_history"
-        ),
-    )
-
-    # Initialize the bot's first message only after LLM was chosen
-    if (
-        "chosen_llm" in st.session_state.keys()
-        and "chat_history" not in st.session_state.keys()
-    ):
-        with st.spinner("Chatbot is initializing..."):
-            initial_message = conversation.predict(input="", chat_history=[])
-            st.session_state["chat_history"] = [
-                {"role": "assistant", "content": initial_message}
-            ]
-
-    if "chosen_llm" in st.session_state.keys():
-        show_previous_chats()
-        chatbot()
-
-    st.markdown(
-        """
-    <style>
-    .streamlit-chat.message-container .content p {
-        white-space: pre-wrap !important;
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-    }
-    .output {
-         white-space: pre-wrap !important;
-        }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
