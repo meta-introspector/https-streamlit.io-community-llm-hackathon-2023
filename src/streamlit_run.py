@@ -6,6 +6,10 @@ from streamlit_js_eval import streamlit_js_eval, copy_to_clipboard, create_share
 
 URL1="https://org-clarifai.streamlit.app/?embed=true"
 url = st.experimental_get_query_params().get("url", URL1)
+#if len(url)>1:
+#    url = url[0]
+st.write(url)
+    
 new_url = st.text_input("Enter a new URL of a Streamlit app", value=url)
 frame = components.iframe(new_url, width=500, height=400)
 
@@ -15,15 +19,26 @@ st.write(dir(frame))
 #    st.write(x,str(getattr(frame,x)))
 #    st.write(x,str(help(getattr(frame,x))))
 
-hs = st.text_input("Enter a new URL of a Streamlit app", value="'hi'")    
-#streamlit_js_eval(hs)
+hs = st.text_input("Javascript", value="'hi'")
 st.write(f"IN {hs}")
-hs1 = streamlit_js_eval(
-    js_expressions=hs,
-    key = 'SCR'
-)
-st.write(f"OUT {hs1}")
+component_key = "KEY"
 
+ht1 = streamlit_js_eval(
+    js_expressions=hs,
+    key = component_key,
+    want_output= True)
+
+st.write(f"OUT {ht1}")
+
+hs2= f"JSON.stringify({hs})"
+st.write(f"IN {hs2}")
+#json.stringify(document.queryselectorall('*'))
+ht2 = streamlit_js_eval(
+    js_expressions=hs2,
+    key = component_key+"2",
+    want_output= True)
+
+st.write(f"OUT {ht2}")
 
 st.write(new_url)
     
