@@ -1,16 +1,34 @@
 import os
 from collections.abc import Iterable
 import streamlit as st
-import types 
+import types
+import call_api
 import requests
+
+last_id= st.text_input(            "last_id",         )
+
+        
 from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2
 from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
 
-# globals
+PAT = st.secrets["CLARIFAI_PAT"]
+USER_ID =st.secrets["clarifai_user_id"]
+channel = ClarifaiChannel.get_grpc_channel()
+stub = service_pb2_grpc.V2Stub(channel)
+metadata = (('authorization', 'Key ' + PAT),)
 
+userDataObject= None
+def get_userDataObject():
+    global userDataObject
+    if userDataObject is None:
+        userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=app_id)
+    return userDataObject        
+    
+# globals
+seen = {}
 our_apps= {}
 app_datasets = {}
 os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
@@ -63,17 +81,20 @@ def act(data):
     if not data:
         return
     for data1 in data:
-        
         yield from doapply(data1)  # apply those changes to the api
 
-seen = {}
+
 def myselect(data):
     todo = []
     key = str(data)
     if isinstance(data,str):
-        options = st.button(data,
-                            key=key + "button"
-                            )
+        name = key + "button"
+        if name not in seen:
+            options = st.button(data,
+                                key=name
+                                )
+            seen[name]=options
+            #key + "button"
     else:
         for f in data:
             todo.append(f)
@@ -104,7 +125,116 @@ def decide(data):
             #for data1 in data:
             yield from myselect([data1 for data1 in data])  # let the user select which ones
 
+import emojis
+m  = emojis.Emojis()
+concepts1 = {}
+def get_concepts():
+    #return self.get_dataset_names_with_prefix()
+    m  = emojis.Emojis()
+    dataset_names = {}
+
+    for x in m.process():
+        #print(x)
+        #{'combine': ['Create prompt model that will ', "define the <generator object Emojis.prompt_model at 0x7fc73600d770> with args {'emoji': '📥🔗📜'} using example :'''{data.text.raw}'''"]}
+        if "combine" in x:
+            c1 = x["combine"]
+            x1 = c1[0]
+            x2 = c1[1]
+            #print("DEBUG",c1, x1, x2)
+
+            if x1 not in concepts1:
+                orig = x1
+                concepts1[x1] = 1
+                x1 = x1.strip()
+                x1 = x1.replace(" ","_")
+                x1 = x1.replace("__","_")
+                #print("CONCEPT",x1)
+                #print("ORIG",orig)
+                if len(orig)<3:
+                    raise Exception("nope")
+                #
+                for i,p in enumerate([
+                        f"The concept of {orig} and its relationship to the concepts contained in '''{{data.text.raw}}'''",
+                        f"The concept of {orig} in '''{{data.text.raw}}'''",
+                        f"The concept of {orig} in consideration of the special case of {x1} in '''{{data.text.raw}}'''",
+                        f"The concept of {orig} and {x1} in '''{{data.text.raw}}'''",
+                        f"Relate {orig} to '''{{data.text.raw}}'''",                        
+                ]):
+                    #print("DEBUG!ORIG", orig)
+                    #print("DEBUG!",  x1)
+                    #print("DEBUG!", str(i))
+                    #print("DEBUG!P", str(p))
+
+                    dataset_names[x1 +str(i)] = dict(
+                        prompt=p,
+                        orig=orig,
+                        i=i,
+                        x1=x1,
+                        p=p,
+                        source=x,
+                        emojis=m,
+                        )
+
+            #dataset_names[x] = x
+    return dataset_names
+
+concept_list = []
+
+for x in get_concepts():
+    #st.write(x)
+    concept_list.append(x)
+#selected_concept = st.selectbox("concepts",concept_list)
+
+def run_infer(value, url):
+    st.write("infer",value, url)
+    st.write("selected",selected_workflows)
+    workflow = selected_workflows
+    data_url = url
+    st.write("selected",selected_app)
+    #workflow
+    ###app,selected_workflows,url
+    try:
+        ret = call_api.call_workflow(stub, metadata, get_userDataObject(), workflow, data_url)
+        st.write(ret)
+    except Exception as e:
+        st.write(e)
+
+
+def toemoji(data):
+    
+    if isinstance(data, types.GeneratorType):
+        pass
+    elif "value" in data:
+        va = data["value"]
+        url = data["url"]
+        aid = data["id"]
+        name = va + "button"
+        if name not in seen:
+            st.write("ID",aid)
+            st.write("translate this into a structured emoji representation?",url)
+            options = st.button(va,
+                            on_click=run_infer,
+                            kwargs={
+                                #"concept":selected_concept,
+                                "value":va,
+                                "url":url
+                            },
+                            key= va + "button"
+                            )
+            seen[name]=options
+
+    else:
+        #st.write("Filtering Object is iterable",type(data).__name__,data)
+        pass
+
+    # 
+
+
 def summarize(data):
+
+    # lets see if we can use emojis to summarize.
+    toemoji(data)
+    
     #if isinstance(data, generato):
     if isinstance(data, Iterable):
         if isinstance(data, types.GeneratorType):
@@ -117,8 +247,7 @@ def summarize(data):
         st.write("Sum Object not an iterable")
         yield data
 
-        #for x in data:
-        #yield x
+
 def sort(data):
     if isinstance(data, Iterable):
         if isinstance(data, types.GeneratorType):
@@ -132,9 +261,6 @@ def sort(data):
         st.write("Sort Object not an iterable",data)
         yield data
 
-    #for x in data:
-    #    yield x
-from collections.abc import Iterable
 
 def filtering(data):
     if isinstance(data,str):
@@ -145,8 +271,12 @@ def filtering(data):
         if isinstance(data, types.GeneratorType):
             pass
         else:            
-            st.write("Filtering Object is iterable",type(data).__name__,data)
-            
+
+            if "value" in data:
+                v = data["value"]
+                #st.write("VALUE",v)
+            else:
+                st.write("Filtering Object is iterable",type(data).__name__,data)
         for x in data:
             yield x
     else:
@@ -154,14 +284,31 @@ def filtering(data):
         yield data
         
 def orient(data):
-    yield from summarize(sort(filtering(data)))  # show a summary of the data
-
-
+    toemoji(data)
+    yield from summarize(
+        sort(
+            filtering(data)))  # show a summary of the data
+all_apps = []
+workflows = {}
+selected_workflows = None
+selected_app = None 
 def apps():
     # list the apps we have access to
+
     for app in our_apps:
         yield app
-
+        all_apps.append(app.id)
+        wf = app.list_workflows()
+        for w in wf:
+            #st.write({                "workflow":w.id            })
+            workflows[w.id]=w
+    
+    global selected_workflows
+    global selected_app
+    if selected_workflows is None:
+        selected_workflows = st.selectbox("workflows",workflows)
+        selected_app = st.selectbox("apps",all_apps)
+    
 def datasets(app):
     if app.name in app_datasets:
         st.write ("DEBUG1",app.name)
@@ -174,57 +321,61 @@ def datasets(app):
 def inputs(dataset):
     for x in ("inputa","inputb"):
         yield dataset + x
-    
-def unassigned_inputs(app):
+app_id = None
+page_size =        st.text_input("page_size") #,default=10)
 
-    PAT = st.secrets["CLARIFAI_PAT"]
-    USER_ID =st.secrets["clarifai_user_id"]
-    channel = ClarifaiChannel.get_grpc_channel()
-    stub = service_pb2_grpc.V2Stub(channel)
-    metadata = (('authorization', 'Key ' + PAT),)
-    userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=app.id)
+def unassigned_inputs(data):
+    global app_id
+    if selected_app:
+        app_id = selected_app
+    
+    global page_size
+    if page_size is '':
+        page_size = 10
+    else:
+        page_size = int(page_size)
+
+    kwargs={}
+    if last_id:
+        kwargs["last_id"]=last_id
+
     stream_inputs_response = stub.StreamInputs(
         service_pb2.StreamInputsRequest(
-            user_app_id=userDataObject,
-            per_page=3,
+            user_app_id=get_userDataObject(),
+            per_page=int(page_size),
+            **kwargs
         ),
         metadata=metadata
     )
-
     if stream_inputs_response.status.code != status_code_pb2.SUCCESS:
         yield({"status":stream_inputs_response.status})
         raise Exception("Stream inputs failed, status: " + stream_inputs_response.status.description)
-
     for input_object in stream_inputs_response.inputs:
-
         data2 =  requests.get(input_object.data.text.url)
         value =   data2.text
         yield({
             "type": "input",
             #"res": data2.resu
+            "id": input_object.id,
             "url": input_object.data.text.url,
             "value":             value})
-    
 
 def observe():
     for app in apps():
+        global app_id
+        app_id = app.id
         st.write("App",app.name)
-
         yield from unassigned_inputs(app)
-                
         for dataset in datasets(app):
             st.write("Dataset",dataset)
             for input in inputs(dataset):
                 yield {"dataset": [ app , dataset, input ]}
-        #for input in unassigned_inputs(dataset):
-
-        #    yield [ app , dataset, input ]
 
 def ooda():
     for sample in observe():
         samples = []
         for oriented in orient(sample):
-            st.write("orient",oriented)
+            #st.write("orient",oriented)
             samples.append(oriented)
         for decision in decide(samples):
             yield from act(decision)
@@ -259,9 +410,12 @@ def get_default_models():
 
 def main():
     global our_apps
-    st.set_page_config(layout="wide")
+    #st.set_page_config(layout="wide")
 
     our_apps = client.list_apps()
+
+
+
     #if check_password():
     if True: # skip password for now
         for x in ooda():
