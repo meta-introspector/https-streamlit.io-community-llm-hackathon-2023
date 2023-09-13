@@ -15,22 +15,37 @@ from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
 
+wf1 = None
+def workflow_selected(workflow):
+    #globals wf1
+    st.write("Workflow selected",workflow)
+    wf1 = workflow
+    
 
 # Create widgets for each parameter
 oparams = st.experimental_get_query_params()
 params = {
     x: oparams[x][0]  for x in oparams
 }
-st.write(params)
+#st.write(params)
 
 workflows = {}
 selected_workflows = None
+def get_workflow():
+    st.write("getwork",wf1)
+    if "workflows" in st.session_state:
+        return st.session_state["workflows"]
+    else:
+        return wf1
 def get_workflow_gui():
     global selected_workflows
     value = None
-    if "workflow" in params:
+    #st.write("workflow params",params)
+    if "workflow" not in params:
+        params["workflow"] = "RakeItUpV3Using_emojis_instead_of_words_for0" # default                
+    if "workflow" in params:        
         value=params.get("workflow",)
-        #st.write("workflow value",value)
+        #st.write("workflow arg value",value)
         if value is not None:
             if value :
                 if value not in workflows:
@@ -39,9 +54,9 @@ def get_workflow_gui():
     
     aindex = 0
     
-    if value :
-        st.write("workflow value",value)
-        st.write("workflow order",ordered)
+    if value is not None:
+        #st.write("workflow value",value)
+        #st.write("workflow order",ordered)
         aindex = ordered.index(value )
             
     if selected_workflows is None:
@@ -50,8 +65,15 @@ def get_workflow_gui():
                                               ordered,
                                               key="workflows",
                                               index=aindex,
+                                              on_change=workflow_selected,
+                                              kwargs={"workflow":value},
                                               help="choose which workflow to run.")
+            #st.write("selected workflow",selected_workflows)
+            #params["workflow2"] = selected_workflows
+            #params["workflow8"] = selected_workflows
             return selected_workflows
+    return selected_workflows
+    
 app_args = dict(
     concept_id = st.text_input("ConceptID", help="Concept id to search for" , value ="python"),
     # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
@@ -61,7 +83,7 @@ app_args = dict(
     last_id = st.text_input("Last Id", value=params.get("last_id", ""),
                             help= "Last Id as a starting token, enter or select the token."
                                    ),
-    workflow = get_workflow_gui(),
+    workflow = None,
     num_runs = st.number_input("Number of Runs",
                                min_value=1,
                                value=int(params.get("num_runs", 1)),
@@ -72,9 +94,9 @@ app_args = dict(
                                     ),
     summarize_output = st.checkbox("Summarize Output",
                                    value=params.get("summarize_output", False),                                   
-                                   help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."                                   
-                                   ),
+                                   help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
     )
+
 def get_concept_id():
     return app_args['concept_id']
 
@@ -264,14 +286,19 @@ for x in get_concepts():
 
 def run_infer(value, url):
     st.write("infer",value, url)
-    st.write("selected",selected_workflows)
-    workflow = selected_workflows
+
+    #st.write("selected",wf)
+    workflow = get_workflow()
     data_url = url
     st.write("selected",selected_app)
-    #workflow
-    ###app,selected_workflows,url
+    ci = get_concept_id()
+
+    concepts=[workflow]
+    if ci :
+        concepts.append(ci)
+
     try:
-        ret = call_api.call_workflow(stub, metadata, get_userDataObject(), workflow, data_url)
+        ret = call_api.call_workflow(stub, metadata, get_userDataObject(), workflow, data_url, concepts)
         st.write(ret)
     except Exception as e:
         st.write(e)
@@ -287,8 +314,10 @@ def toemoji(data):
             url = data["url"]
             aid = data["id"]
             name = va + "button"
-            if name not in seen:
-                st.write("ID",aid)
+            
+            if name in seen :
+                return
+            seen[name]=1
             #st.write("translate this into a structured emoji representation?",url)
 
             # Get the current URL as a string
@@ -296,15 +325,24 @@ def toemoji(data):
             q.update(app_args)
             q["data_url"] = url
             q["input_id"] = aid
+            #q["1workflow"] = get_workflow()
+
+            if "workflows" in st.session_state:
+                q["workflow"] = st.session_state["workflows"]
+
+            # generic
+            #for x in st.session_state:
+            #    q[f"st_{x}"] = str(st.session_state[x])                
+                #q[f"st_{x}"] = str(st.session_state[x])
+                
             #q["input_name"] = name
             #q["input_value"] = va # skip this for shortness
-            st.write(q)
+
 
             encoded_query = urllib.parse.urlencode(q, doseq=True)
-            st.write(encoded_query)
+            #st.write(encoded_query)            
             
-            
-            st.markdown(f"[link {encoded_query}](/?{encoded_query})")
+            st.markdown(f"* share [input_link {encoded_query}](/?{encoded_query})")
 
             #for session_info in Server.get_current()._session_info_by_id.values():
 
@@ -322,7 +360,8 @@ def toemoji(data):
                                 "value":va,
                                 "url":url
                             },
-                            key= va + "button"
+                                key= va + "button",
+                                help=str(q)
                             )
             seen[name]=options
         else:
@@ -431,7 +470,7 @@ app_id = None
 
 
 def find_inputs(concept_id):
-    st.write("search for concepts",concept_id)
+    #st.write("search for concepts",concept_id)
     #st.write("user data",userDataObject)
     #st.write("stub",stub)
     post_annotations_searches_response = stub.PostAnnotationsSearches(
@@ -464,9 +503,9 @@ def find_inputs(concept_id):
     if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
         st.write("Post searches failed, status: " + post_annotations_searches_response.status.description)
 
-    st.write("Search result:")
+        #st.write("Search result:")
     for hit in post_annotations_searches_response.hits:
-        st.write("\tScore %.2f for annotation: %s off input: %s" % (hit.score, hit.annotation.id, hit.input.id))
+        #st.write("\tScore %.2f for annotation: %s off input: %s" % (hit.score, hit.annotation.id, hit.input.id))
         #yield hit
         value  = str(hit)
         ##
@@ -533,6 +572,7 @@ def find_inputs(concept_id):
                 #     })
     
 def unassigned_inputs(data):
+    
     global app_id
     if selected_app:
         app_id = selected_app
@@ -570,16 +610,20 @@ def unassigned_inputs(data):
             "value":             value})
 
 def observe():
+    wf = get_workflow_gui()
     for app in apps():
         global app_id
         app_id = app.id
         st.write("App",app.name)
-        yield from find_inputs(get_concept_id())
-        yield from unassigned_inputs(app)
+
+        # yield from unassigned_inputs(app)
         for dataset in datasets(app):
             st.write("Dataset",dataset)
             for input in inputs(dataset):
                 yield {"dataset": [ app , dataset, input ]}
+
+        #just do the inputs last ...
+        yield from find_inputs(get_concept_id())
 
 def ooda():
     for sample in observe():
@@ -680,7 +724,7 @@ def get_args():
     
 #     page_size = int(params.get("page_size", 10))
 #     last_id = params.get("last_id", "")
-#     workflow = params.get("workflow", "")
+
 #     num_runs = int(params.get("num_runs", 1))
 #     output_location = params.get("output_location", "")
 #     summarize_output = params.get("summarize_output", False)    
@@ -688,7 +732,6 @@ def get_args():
 # page_size = st.number_input("Page Size", min_value=1, value=page_size)
 
 # last_id = st.text_input("Starting Token", value=last_id)
-# workflow = st.text_input("Workflow", value=workflow)
 # num_runs = st.number_input("Number of Runs", min_value=1, value=num_runs)
 # output_location = st.text_input("Output Location", value=output_location)
 # summarize_output = st.checkbox("Summarize Output", value=summarize_output)

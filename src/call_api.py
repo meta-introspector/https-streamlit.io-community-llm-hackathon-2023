@@ -16,7 +16,7 @@ USER_ID = st.secrets["clarifai_user_id"]
 # YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
 ############################################################################
 
-def call_workflow(stub, metadata, userDataObject, workflow, data_url):
+def call_workflow(stub, metadata, userDataObject, workflow, data_url, concepts=[]):
     st.write("workflow",workflow, "data",data_url)
     post_workflow_results_response = stub.PostWorkflowResults(
         service_pb2.PostWorkflowResultsRequest(
@@ -52,4 +52,4 @@ def call_workflow(stub, metadata, userDataObject, workflow, data_url):
     
     # Uncomment this line to st.write the full Response JSON
     fstr = str(results)
-    add_text.add_text(stub,userDataObject,metadata,fstr)
+    add_text.add_text(stub,userDataObject,metadata,fstr, concepts)

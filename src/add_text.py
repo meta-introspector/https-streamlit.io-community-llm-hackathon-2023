@@ -4,15 +4,17 @@ from clarifai_grpc.grpc.api.status import status_code_pb2
 from ratelimit import limits, RateLimitException
 
 @limits(calls=10, period=1)
-def add_text(stub,userDataObject,metadata,fstr):
+def add_text(stub,userDataObject,metadata,fstr, concepts=[]):
     text_data = resources_pb2.Text(raw=fstr)
-    data = resources_pb2.Data(text=text_data)
+    concepts2 = [resources_pb2.Concept(id=x, value=1.) for x in concepts]
+    data = resources_pb2.Data(text=text_data, concepts=concepts2)
     post_inputs_response = stub.PostInputs(
         service_pb2.PostInputsRequest(
             user_app_id=userDataObject,
             inputs=[
                 resources_pb2.Input( data=data)                
-            ]
+            ],
+            
         ),
         metadata=metadata
     )
