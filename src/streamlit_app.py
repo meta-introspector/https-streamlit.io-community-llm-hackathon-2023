@@ -27,7 +27,7 @@ workflows = {}
 selected_workflows = None
 def get_workflow_gui():
     global selected_workflows
-
+    value = None
     if "workflow" in params:
         value=params.get("workflow",)
         #st.write("workflow value",value)
