@@ -1,18 +1,95 @@
 import os
 from collections.abc import Iterable
+#xfrom streaamlit.server.server import Server
+#from streamlit_server_state import server_state, server_state_lock
+from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 import streamlit as st
 import types
 import call_api
+import emojis
 import requests
-
-last_id= st.text_input(            "last_id",         )
-
-        
+import urllib.parse        
 from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2
 from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
+
+
+# Create widgets for each parameter
+oparams = st.experimental_get_query_params()
+params = {
+    x: oparams[x][0]  for x in oparams
+}
+st.write(params)
+
+workflows = {}
+selected_workflows = None
+def get_workflow_gui():
+    global selected_workflows
+
+    if "workflow" in params:
+        value=params.get("workflow",)
+        #st.write("workflow value",value)
+        if value is not None:
+            if value :
+                if value not in workflows:
+                    workflows[value] = value
+    ordered = sorted(list(workflows.keys()))
+    
+    aindex = 0
+    
+    if value :
+        st.write("workflow value",value)
+        st.write("workflow order",ordered)
+        aindex = ordered.index(value )
+            
+    if selected_workflows is None:
+        if len(ordered) > 0:
+            selected_workflows = st.selectbox("workflows",
+                                              ordered,
+                                              key="workflows",
+                                              index=aindex,
+                                              help="choose which workflow to run.")
+            return selected_workflows
+app_args = dict(
+    concept_id = st.text_input("ConceptID", help="Concept id to search for" , value ="python"),
+    # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
+    page_size = st.number_input("Page Size", min_value=1,
+                                help="Use a number input widget to allow users to specify the page size. This will control how many items are displayed per page",
+                                value=int(params.get("page_size", "10"))),
+    last_id = st.text_input("Last Id", value=params.get("last_id", ""),
+                            help= "Last Id as a starting token, enter or select the token."
+                                   ),
+    workflow = get_workflow_gui(),
+    num_runs = st.number_input("Number of Runs",
+                               min_value=1,
+                               value=int(params.get("num_runs", 1)),
+                               help="how many times they want to run the selected workflow."
+                               ),
+    output_location = st.text_input("Output Location", value=params.get("output_location", ""),
+                                    help="specify where to store the output, whether it's a file path or a cloud storage location."
+                                    ),
+    summarize_output = st.checkbox("Summarize Output",
+                                   value=params.get("summarize_output", False),                                   
+                                   help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."                                   
+                                   ),
+    )
+def get_concept_id():
+    return app_args['concept_id']
+
+def add_workflows(w):
+    global workflows
+    workflows[w.id] = w
+    
+def get_last_id():
+    return app_args['last_id']
+
+def get_page_size():
+    return app_args['page_size']
+
+# Display the result based on parameters
+
 
 PAT = st.secrets["CLARIFAI_PAT"]
 USER_ID =st.secrets["clarifai_user_id"]
@@ -125,7 +202,7 @@ def decide(data):
             #for data1 in data:
             yield from myselect([data1 for data1 in data])  # let the user select which ones
 
-import emojis
+
 m  = emojis.Emojis()
 concepts1 = {}
 def get_concepts():
@@ -206,12 +283,38 @@ def toemoji(data):
         pass
     elif "value" in data:
         va = data["value"]
-        url = data["url"]
-        aid = data["id"]
-        name = va + "button"
-        if name not in seen:
-            st.write("ID",aid)
-            st.write("translate this into a structured emoji representation?",url)
+        if "url" in data:
+            url = data["url"]
+            aid = data["id"]
+            name = va + "button"
+            if name not in seen:
+                st.write("ID",aid)
+            #st.write("translate this into a structured emoji representation?",url)
+
+            # Get the current URL as a string
+            q= st.experimental_get_query_params()
+            q.update(app_args)
+            q["data_url"] = url
+            q["input_id"] = aid
+            #q["input_name"] = name
+            #q["input_value"] = va # skip this for shortness
+            st.write(q)
+
+            encoded_query = urllib.parse.urlencode(q, doseq=True)
+            st.write(encoded_query)
+            
+            
+            st.markdown(f"[link {encoded_query}](/?{encoded_query})")
+
+            #for session_info in Server.get_current()._session_info_by_id.values():
+
+            #st.write(parsed_url)
+            # Replace the query part of the URL with the new string
+            #new_url = parsed_url._replace(query=encoded_query).geturl()
+            # Write the new URL as a link
+            #st.write(f"[New URL]", new_url)
+
+
             options = st.button(va,
                             on_click=run_infer,
                             kwargs={
@@ -222,10 +325,12 @@ def toemoji(data):
                             key= va + "button"
                             )
             seen[name]=options
-
+        else:
+            st.write("OTHER",data)
     else:
-        #st.write("Filtering Object is iterable",type(data).__name__,data)
+        #st.write()
         pass
+
 
     # 
 
@@ -289,8 +394,6 @@ def orient(data):
         sort(
             filtering(data)))  # show a summary of the data
 all_apps = []
-workflows = {}
-selected_workflows = None
 selected_app = None 
 def apps():
     # list the apps we have access to
@@ -300,15 +403,17 @@ def apps():
         all_apps.append(app.id)
         wf = app.list_workflows()
         for w in wf:
-            #st.write({                "workflow":w.id            })
-            workflows[w.id]=w
+            #st.write({  "workflow":w.id            })
+            add_workflows(w)
     
-    global selected_workflows
     global selected_app
-    if selected_workflows is None:
-        selected_workflows = st.selectbox("workflows",workflows)
-        selected_app = st.selectbox("apps",all_apps)
     
+    get_workflow_gui()
+
+    if selected_app is None:
+        selected_app = st.selectbox("apps",all_apps)
+        
+            
 def datasets(app):
     if app.name in app_datasets:
         st.write ("DEBUG1",app.name)
@@ -316,28 +421,132 @@ def datasets(app):
             st.write ("DEBUG2",app.name, "in", app_datasets)
             yield name
     else:
-        st.write ("DEBUG",app.name, "not in", app_datasets)
+        #st.write ("DEBUG",app.name, "not in", app_datasets)
+        pass
 
 def inputs(dataset):
     for x in ("inputa","inputb"):
         yield dataset + x
 app_id = None
-page_size =        st.text_input("page_size") #,default=10)
 
+
+def find_inputs(concept_id):
+    st.write("search for concepts",concept_id)
+    #st.write("user data",userDataObject)
+    #st.write("stub",stub)
+    post_annotations_searches_response = stub.PostAnnotationsSearches(
+        service_pb2.PostAnnotationsSearchesRequest(
+            user_app_id=get_userDataObject(),  
+            searches = [
+                resources_pb2.Search(
+                    query=resources_pb2.Query(
+                        filters=[
+                            resources_pb2.Filter(
+                                annotation=resources_pb2.Annotation(
+                                    data=resources_pb2.Data(
+                                        concepts=[  # You can search by multiple concepts
+                                            resources_pb2.Concept(
+                                                id=concept_id,  # You could search by concept Name as well
+                                                value=1  # Value of 0 will search for images that don't have the concept
+                                            )
+                                        ]
+                                    )
+                                )
+                        )
+                        ]
+                    )
+                )
+            ]
+        ),
+        metadata=metadata
+    )
+    
+    if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
+        st.write("Post searches failed, status: " + post_annotations_searches_response.status.description)
+
+    st.write("Search result:")
+    for hit in post_annotations_searches_response.hits:
+        st.write("\tScore %.2f for annotation: %s off input: %s" % (hit.score, hit.annotation.id, hit.input.id))
+        #yield hit
+        value  = str(hit)
+        ##
+        #         0:"ByteSize"
+        # 1:"Clear"
+        # 2:"ClearExtension"
+        # 3:"ClearField"
+        # 4:"CopyFrom"
+        # 5:"DESCRIPTOR"
+        # 6:"DiscardUnknownFields"
+        # 7:"Extensions"
+        # 8:"FindInitializationErrors"
+        # 9:"FromString"
+        # 10:"HasExtension"
+        # 11:"HasField"
+        # 12:"IsInitialized"
+        # 13:"ListFields"
+        # 14:"MergeFrom"
+        # 15:"MergeFromString"
+        # 16:"ParseFromString"
+        # 17:"RegisterExtension"
+        # 18:"SerializePartialToString"
+        # 19:"SerializeToString"
+        # 20:"SetInParent"
+        # 21:"UnknownFields"
+        # 22:"WhichOneof"
+        # 23:"_CheckCalledFromGeneratedFile"
+        # 24:"_ListFieldsItemKey"
+        # yield({
+        #     "type": "hit",
+        #     #"dir": dir(hit),
+        #     "ListFields": hit.ListFields(),
+        #     #"url": hit.data.text.url,
+        #     "value": value})
+
+        
+        for x in hit.ListFields():
+            
+            # yield({
+            #     "type": "hitf",
+            #     "dir": dir(x),
+            #     #"count": x.count(),
+            #     #"index": x.index(),
+            #     "value": str(x)
+            # })
+
+            for y in x:
+                if isinstance(y, resources_pb2.Input):
+                    input_object = y 
+                    data2 =  requests.get(input_object.data.text.url)
+                    value =   data2.text
+                    yield({
+                        "type": "input",
+                        "id": input_object.id,
+                        "url": input_object.data.text.url,
+                        "value":             value})
+                    
+                # else:
+                #     yield({
+                #         "type": "hitfy",
+                #         "dir": dir(y),
+                #         "type2": type(y),                    
+                #         "value": str(y)
+                #     })
+    
 def unassigned_inputs(data):
     global app_id
     if selected_app:
         app_id = selected_app
     
-    global page_size
+    page_size = get_page_size()
     if page_size is '':
         page_size = 10
     else:
         page_size = int(page_size)
 
     kwargs={}
-    if last_id:
-        kwargs["last_id"]=last_id
+    st = get_last_id()
+    if str:
+        kwargs["last_id"]=st
 
     stream_inputs_response = stub.StreamInputs(
         service_pb2.StreamInputsRequest(
@@ -365,6 +574,7 @@ def observe():
         global app_id
         app_id = app.id
         st.write("App",app.name)
+        yield from find_inputs(get_concept_id())
         yield from unassigned_inputs(app)
         for dataset in datasets(app):
             st.write("Dataset",dataset)
@@ -449,6 +659,48 @@ def main():
             models[model_name].set_dataset(dataset_index[idn])
         models[model_name].sync()
 
+#### experimental args
+# Retrieve URL parameters
+
+
+# defaults to be populated by apps
+args = {
+    # "page_size": 10,
+    # "last_id": "",
+    # "concept_id": "python",
+    # "workflow":"RakeItUpV3a_self_referential_tensor_containing4",
+    # "num_runs": 1,
+    # "output_location": "",
+    # "summarize_output": False
+}
+
+
+def get_args():
+    params = st.experimental_get_query_params()
+    
+#     page_size = int(params.get("page_size", 10))
+#     last_id = params.get("last_id", "")
+#     workflow = params.get("workflow", "")
+#     num_runs = int(params.get("num_runs", 1))
+#     output_location = params.get("output_location", "")
+#     summarize_output = params.get("summarize_output", False)    
+# # Create widgets for each parameter
+# page_size = st.number_input("Page Size", min_value=1, value=page_size)
+
+# last_id = st.text_input("Starting Token", value=last_id)
+# workflow = st.text_input("Workflow", value=workflow)
+# num_runs = st.number_input("Number of Runs", min_value=1, value=num_runs)
+# output_location = st.text_input("Output Location", value=output_location)
+# summarize_output = st.checkbox("Summarize Output", value=summarize_output)
+
+
+# Function to apply changes
+def apply_changes(**args):
+    # Update URL with current parameter values
+    st.experimental_set_query_params(**args  )
+
+# Add an "Apply" button
+st.button("Apply", on_click=apply_changes, kwargs=app_args)
 
 if __name__ == "__main__":
     main()
