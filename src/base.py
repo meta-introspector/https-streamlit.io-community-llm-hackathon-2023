@@ -1,6 +1,6 @@
 import os
 import json
-
+import streamlit as st
 # from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2
 from clarifai.client.user import User
@@ -15,24 +15,10 @@ class BaseClarifaiModel:
         self.app_id = app_id
         self.init_client()
 
-    def read_config(self):
-        if self.config is None:
-            with open(os.path.expanduser("~/.clarify")) as fi:
-                self.config = json.load(fi)
-        return self.config
-
-    def read_user_id_from_config(self):
-        return self.read_config().get("user_id", None)
-
-    def read_app_id_from_config(self):
-        return self.read_config().get("app_id", None)
-
     def init_client(self):
-        self.api_key = self.read_config().get("key", None)
+        self.api_key = st.secrets["CLARIFAI_PAT"]
         os.environ["CLARIFAI_PAT"] = self.api_key
-
-        # client = User(user_id=CREATE_APP_USER_ID)
-
+        self.user_id =st.secrets["clarifai_user_id"]
         self.client = User(user_id=self.user_id)
 
     def create_dataset_with_suffix(self, base_id, max_attempts=3):

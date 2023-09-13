@@ -9,14 +9,8 @@ from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 import simple
 import add_text
 
-# Your PAT (Personal Access Token) can be found in the portal under Authentification
-PAT = simple.model.api_key
-# Specify the correct user_id/app_id pairings
-# Since you're making inferences outside your app's scope
-USER_ID = simple.model.user_id
-APP_ID = simple.model.app_id
-
-
+PAT = st.secrets["CLARIFAI_PAT"]
+USER_ID = st.secrets["clarifai_user_id"]
 
 ############################################################################
 # YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
