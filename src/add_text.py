@@ -32,6 +32,9 @@ def add_text(stub,userDataObject,user_metadata,fstr, concepts=[], custom_metadat
         print(post_inputs_response.status)
         raise Exception("Post inputs failed, status: " + post_inputs_response.status.description)
     #st.write(fstr)
-    #st.code(post_inputs_response)
-    #st.write(dir(post_inputs_response))
-    #st.code(post_inputs_response.outputs[0].data.text.raw)
+    st.write("Posted new results")
+    st.code(post_inputs_response)
+    st.code(post_inputs_response.outputs[0].data.text.raw)
+
+
+

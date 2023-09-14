@@ -19,16 +19,16 @@ params = {
     x: oparams[x][0]  for x in oparams
 }
 
-workflows = []
-if "workflows" in params :
-    for wf in oparams["workflows"]:
-        workflows.append(wf)
-else:
-    try :
-        workflows_list = [x.strip() for x in st.secrets.DEFAULT_WORKFLOWS.split(",")]
-        workflows.extend(workflows_list)
-    except:
-        workflows.append("RakeItUpV3Critical_Reconstruction_of4")
+# workflows = []
+# if "workflows" in params :
+#     for wf in oparams["workflows"]:
+#         workflows.append(wf)
+# else:
+#     try :
+#         workflows_list = [x.strip() for x in st.secrets.get("DEFAULT_WORKFLOWS","RakeItUpV3Critical_Reconstruction_of4").split(",")]
+#         workflows.extend(workflows_list)
+#     except:
+#         workflows.append("RakeItUpV3Critical_Reconstruction_of4")
         
 # modes
 class ConceptInputs():
@@ -106,7 +106,13 @@ app_args = dict(
         help= "Input Id to load."
     ),
     
-    workflow = st.selectbox("Workflow", workflows)
+    workflow = st.text_input(
+        "Workflow",
+        value=params.get(
+            "workflow",
+            "RakeItUpV3Critical_Reconstruction_of4"),
+        key="workflow"
+    )
     #num_runs = st.number_input("Number of Runs",                               min_value=1,=int(params.get("num_runs", 1)),                               help="how many times they want to run the selected workflow." ),
     #output_location = st.text_input("Output Location", value=params.get("output_location", ""), help="specify where to store the output, whether it's a file path or a cloud storage location."                                    ),
     #summarize_output = st.checkbox("Summarize Output",                                   value=params.get("summarize_output", False),                                                                      help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
@@ -117,7 +123,7 @@ app_args = dict(
 for x in oparams:
     if x in st.session_state:
         # fixme validate thise
-        if x in ("mode","input_id"):
+        if x in ("mode","input_id","workflow"):
             st.write("DEBUG",x,st.session_state[x],oparams[x][0])
             #st.session_state[x] = oparams[x][0]
 
@@ -323,6 +329,9 @@ def get_workflow():
     if "workflow" in st.session_state:
         return st.session_state["workflow"]
     else:
+        for x in  st.session_state:
+            v = st.session_state[x]
+            st.write("DEBUG",x,v)
         return "default-workflow"
     
 
@@ -331,6 +340,7 @@ def run_infer(value, url):
 
     #st.write("selected",wf)
     workflow = get_workflow()
+    st.write("workflow",workflow)
     data_url = url
 
     ci = get_concept_id()

@@ -65,8 +65,6 @@ def call_workflow(stub, user_metadata, userDataObject, workflow, data_url, conce
         "concepts": concepts,
     }
     custom_metadata["res"]=res
-
-    
     
     # Uncomment this line to st.write the full Response JSON
     fstr = str(results.outputs[-1].data.text.raw)
