@@ -440,11 +440,14 @@ def apps():
     for app in our_apps:
         yield app
         all_apps.append(app.id)
-        wf = app.list_workflows()
-        for w in wf:
-            #st.write({  "workflow":w.id            })
-            add_workflows(w)
-    
+        try:
+            wf = app.list_workflows()
+            for w in wf:
+                #st.write({  "workflow":w.id            })
+                add_workflows(w)
+        except Exception as e:
+            st.code(e)
+            
     global selected_app
     
     get_workflow_gui()
