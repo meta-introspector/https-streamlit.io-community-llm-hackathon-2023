@@ -1,7 +1,6 @@
 import os
+from ratelimit import limits, RateLimitException
 from collections.abc import Iterable
-#xfrom streaamlit.server.server import Server
-#from streamlit_server_state import server_state, server_state_lock
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 import streamlit as st
 import types
@@ -15,97 +14,134 @@ from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
 
-wf1 = None
-def workflow_selected(workflow):
-    #globals wf1
-    st.write("Workflow selected",workflow)
-    wf1 = workflow
-    
-
-# Create widgets for each parameter
 oparams = st.experimental_get_query_params()
 params = {
     x: oparams[x][0]  for x in oparams
 }
-#st.write(params)
 
-workflows = {}
-selected_workflows = None
-def get_workflow():
-    st.write("getwork",wf1)
-    if "workflows" in st.session_state:
-        return st.session_state["workflows"]
-    else:
-        return wf1
-def get_workflow_gui():
-    global selected_workflows
-    value = None
-    #st.write("workflow params",params)
-    #if "workflow" not in params:
-        #params["workflow"] = "RakeItUpV3Using_emojis_instead_of_words_for0" # default                
-    if "workflow" in params:        
-        value=params.get("workflow",)
-        #st.write("workflow arg value",value)
-        if value is not None:
-            if value :
-                if value not in workflows:
-                    workflows[value] = value
-    ordered = sorted(list(workflows.keys()))
+workflows = []
+if "workflows" in params :
+    for wf in oparams["workflows"]:
+        workflows.append(wf)
+else:
+    try :
+        workflows_list = [x.strip() for x in st.secrets.DEFAULT_WORKFLOWS.split(",")]
+        workflows.extend(workflows_list)
+    except:
+        workflows.append("RakeItUpV3Critical_Reconstruction_of4")
+        
+# modes
+class ConceptInputs():
+    pass
+class AllInputs():
+    pass
+
+class OneInputs():
+    pass
     
-    aindex = 0
-    
-    if value is not None:
-        #st.write("workflow value",value)
-        #st.write("workflow order",ordered)
-        aindex = ordered.index(value )
-            
-    if selected_workflows is None:
-        if len(ordered) > 0:
-            selected_workflows = st.selectbox("workflows",
-                                              ordered,
-                                              key="workflows",
-                                              index=aindex,
-                                              on_change=workflow_selected,
-                                              kwargs={"workflow":value},
-                                              help="choose which workflow to run.")
-            #st.write("selected workflow",selected_workflows)
-            #params["workflow2"] = selected_workflows
-            #params["workflow8"] = selected_workflows
-            return selected_workflows
-    return selected_workflows
-    
-app_args = dict(
-    concept_id = st.text_input("ConceptID", help="Concept id to search for" , value ="python"),
-    # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
-    page_size = st.number_input("Page Size", min_value=1,
-                                help="Use a number input widget to allow users to specify the page size. This will control how many items are displayed per page",
-                                value=int(params.get("page_size", "10"))),
-    last_id = st.text_input("Last Id", value=params.get("last_id", ""),
-                            help= "Last Id as a starting token, enter or select the token."
-                                   ),
-    workflow = None,
-    num_runs = st.number_input("Number of Runs",
-                               min_value=1,
-                               value=int(params.get("num_runs", 1)),
-                               help="how many times they want to run the selected workflow."
-                               ),
-    output_location = st.text_input("Output Location", value=params.get("output_location", ""),
-                                    help="specify where to store the output, whether it's a file path or a cloud storage location."
-                                    ),
-    summarize_output = st.checkbox("Summarize Output",
-                                   value=params.get("summarize_output", False),                                   
-                                   help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
+@limits(calls=5, period=1)
+def get_input(input_id):
+    get_input_response = stub.GetInput(
+        service_pb2.GetInputRequest(
+            user_app_id=get_userDataObject(), 
+            input_id=input_id
+        ),
+        metadata=user_metadata
     )
+
+    #if get_input_response.status.code == 10000:
+    #    print("RES1",get_input_response)
+    #    print("STAT",get_input_response.status)        
+        #print("RATELIMIT")
+        #return
+        
+    if get_input_response.status.code != status_code_pb2.SUCCESS:
+        #print("STATUS",get_input_response.status)
+        #print("STATUSCODE",stream_inputs_response.status.code)
+        raise Exception("Get input failed, status: " + get_input_response.status.description)
+
+    input_object = get_input_response.input
+    #print("DEBUG" +str(input_object))
+    #pprint.pprint(
+    data2 =  requests.get(input_object.data.text.url)
+    value =   data2.text
+
+    dt = {
+        "type": "input",
+        "id": input_object.id,
+        "url": input_object.data.text.url,
+        "value": value
+        }
+    yield dt
+
+modes = {
+    "concept-inputs" : ConceptInputs(),
+    "all-inputs": AllInputs(),
+    "one-input": OneInputs(),
+}        
+
+app_args = dict(
+    mode = st.text_input("Mode", help="Mode to use", key="mode",value=params.get("mode","concept-inputs")),
+    #st.selectbox("mode",
+    #modes,
+    #key="mode",
+    #                             #on_change=mode_selected,                                 
+    #                             help="choose which mode to use."),
+    concept_id = st.text_input(
+        "ConceptID",
+        key="concept_id",
+        help="Concept id to search for" ,
+        value =params.get("concept_id","python")),
+    
+    app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1"),
+    # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
+    page_size = st.number_input("Page Size", min_value=1,key="page_size",
+                                help="Use a number input widget to allow users to specify the page size. This will control how many items are displayed per page",
+                                value=int(params.get("page_size", "3"))),
+    #last_id = st.text_input("Last Id", value=params.get("last_id", ""),                            help= "Last Id as a starting token, enter or select the token."                                   ),
+    input_id = st.text_input(
+        "input Id",
+        value=params.get("input_id", ""),
+        key="input_id",
+        help= "Input Id to load."
+    ),
+    
+    workflow = st.selectbox("Workflow", workflows)
+    #num_runs = st.number_input("Number of Runs",                               min_value=1,=int(params.get("num_runs", 1)),                               help="how many times they want to run the selected workflow." ),
+    #output_location = st.text_input("Output Location", value=params.get("output_location", ""), help="specify where to store the output, whether it's a file path or a cloud storage location."                                    ),
+    #summarize_output = st.checkbox("Summarize Output",                                   value=params.get("summarize_output", False),                                                                      help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
+    )
+
+
+#####
+for x in oparams:
+    if x in st.session_state:
+        # fixme validate thise
+        if x in ("mode","input_id"):
+            st.write("DEBUG",x,st.session_state[x],oparams[x][0])
+            #st.session_state[x] = oparams[x][0]
+
+
+#####
 
 def get_concept_id():
     return app_args['concept_id']
 
-def add_workflows(w):
-    global workflows
-    workflows[w.id] = w
+def get_input_id():
+    return app_args['input_id']
+
+#def add_workflows(w):
+#    global workflows
+#    workflows[w.id] = w
     
 def get_last_id():
     return app_args['last_id']
+
+def get_mode():
+    return app_args['mode']
+
+def get_app_id():
+    return app_args['app_id']
 
 def get_page_size():
     return app_args['page_size']
@@ -123,13 +159,13 @@ userDataObject= None
 def get_userDataObject():
     global userDataObject
     if userDataObject is None:
-        userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=app_id)
+        userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=get_app_id())
     return userDataObject        
     
 # globals
 seen = {}
 our_apps= {}
-app_datasets = {}
+#app_datasets = {}
 os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
 client = User(user_id=st.secrets["clarifai_user_id"])
 
@@ -282,7 +318,13 @@ concept_list = []
 for x in get_concepts():
     #st.write(x)
     concept_list.append(x)
-#selected_concept = st.selectbox("concepts",concept_list)
+
+def get_workflow():
+    if "workflow" in st.session_state:
+        return st.session_state["workflow"]
+    else:
+        return "default-workflow"
+    
 
 def run_infer(value, url):
     #st.write("infer",value, url)
@@ -290,7 +332,7 @@ def run_infer(value, url):
     #st.write("selected",wf)
     workflow = get_workflow()
     data_url = url
-    #st.write("selected",selected_app)
+
     ci = get_concept_id()
 
     concepts=[workflow]
@@ -301,7 +343,8 @@ def run_infer(value, url):
         ret = call_api.call_workflow(stub, user_metadata, get_userDataObject(), workflow, data_url, concepts)
         #st.write(ret)
     except Exception as e:
-        st.write(e)
+        st.write("ERROR",e)
+        raise e
 
 
 def toemoji(data):
@@ -323,12 +366,11 @@ def toemoji(data):
             # Get the current URL as a string
             q= st.experimental_get_query_params()
             q.update(app_args)
+            q["mode"] = "one-input"
             q["data_url"] = url
             q["input_id"] = aid
             #q["1workflow"] = get_workflow()
 
-            if "workflows" in st.session_state:
-                q["workflow"] = st.session_state["workflows"]
 
             # generic
             #for x in st.session_state:
@@ -344,7 +386,6 @@ def toemoji(data):
             
             st.markdown(f"* share [input_link {encoded_query}](/?{encoded_query})")
 
-            #for session_info in Server.get_current()._session_info_by_id.values():
 
             #st.write(parsed_url)
             # Replace the query part of the URL with the new string
@@ -433,29 +474,9 @@ def orient(data):
         sort(
             filtering(data)))  # show a summary of the data
 all_apps = []
-selected_app = None 
-def apps():
-    # list the apps we have access to
+selected_app = None
 
-    for app in our_apps:
-        yield app
-        all_apps.append(app.id)
-        try:
-            wf = app.list_workflows()
-            for w in wf:
-                #st.write({  "workflow":w.id            })
-                add_workflows(w)
-        except Exception as e:
-            st.code(e)
-            
-    global selected_app
-    
-    get_workflow_gui()
 
-    if selected_app is None:
-        selected_app = st.selectbox("apps",all_apps)
-        
-            
 def datasets(app):
     if app.name in app_datasets:
         st.write ("DEBUG1",app.name)
@@ -469,16 +490,18 @@ def datasets(app):
 def inputs(dataset):
     for x in ("inputa","inputb"):
         yield dataset + x
-app_id = None
-
+#app_id = None
 
 def find_inputs(concept_id):
-    #st.write("search for concepts",concept_id)
-    #st.write("user data",userDataObject)
+    max_count = get_page_size()
+    user_app_id=get_userDataObject()
+    st.write("search for concepts",concept_id)
+    st.write("user data",user_app_id)
     #st.write("stub",stub)
+    #st.write("user metadata",user_metadata)
     post_annotations_searches_response = stub.PostAnnotationsSearches(
         service_pb2.PostAnnotationsSearchesRequest(
-            user_app_id=get_userDataObject(),  
+            user_app_id=user_app_id,
             searches = [
                 resources_pb2.Search(
                     query=resources_pb2.Query(
@@ -505,128 +528,45 @@ def find_inputs(concept_id):
     
     if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
         st.write("Post searches failed, status: " + post_annotations_searches_response.status.description)
-
-        #st.write("Search result:")
-    for hit in post_annotations_searches_response.hits:
-        #st.write("\tScore %.2f for annotation: %s off input: %s" % (hit.score, hit.annotation.id, hit.input.id))
-        #yield hit
-        value  = str(hit)
-        ##
-        #         0:"ByteSize"
-        # 1:"Clear"
-        # 2:"ClearExtension"
-        # 3:"ClearField"
-        # 4:"CopyFrom"
-        # 5:"DESCRIPTOR"
-        # 6:"DiscardUnknownFields"
-        # 7:"Extensions"
-        # 8:"FindInitializationErrors"
-        # 9:"FromString"
-        # 10:"HasExtension"
-        # 11:"HasField"
-        # 12:"IsInitialized"
-        # 13:"ListFields"
-        # 14:"MergeFrom"
-        # 15:"MergeFromString"
-        # 16:"ParseFromString"
-        # 17:"RegisterExtension"
-        # 18:"SerializePartialToString"
-        # 19:"SerializeToString"
-        # 20:"SetInParent"
-        # 21:"UnknownFields"
-        # 22:"WhichOneof"
-        # 23:"_CheckCalledFromGeneratedFile"
-        # 24:"_ListFieldsItemKey"
-        # yield({
-        #     "type": "hit",
-        #     #"dir": dir(hit),
-        #     "ListFields": hit.ListFields(),
-        #     #"url": hit.data.text.url,
-        #     "value": value})
-
         
-        for x in hit.ListFields():
-            
-            # yield({
-            #     "type": "hitf",
-            #     "dir": dir(x),
-            #     #"count": x.count(),
-            #     #"index": x.index(),
-            #     "value": str(x)
-            # })
 
+    count = 0 
+    for hit in post_annotations_searches_response.hits:
+        value  = str(hit)
+        for x in hit.ListFields():
             for y in x:
                 if isinstance(y, resources_pb2.Input):
                     input_object = y 
                     data2 =  requests.get(input_object.data.text.url)
                     value =   data2.text
-                    yield({
-                        "type": "input",
-                        "id": input_object.id,
-                        "url": input_object.data.text.url,
-                        "value":             value})
-                    
-                # else:
-                #     yield({
-                #         "type": "hitfy",
-                #         "dir": dir(y),
-                #         "type2": type(y),                    
-                #         "value": str(y)
-                #     })
-    
-def unassigned_inputs(data):
-    
-    global app_id
-    if selected_app:
-        app_id = selected_app
-    
-    page_size = get_page_size()
-    if page_size is '':
-        page_size = 10
-    else:
-        page_size = int(page_size)
+                    count = count +1
+                    if count < max_count:
+                        dt = {
+                                "type": "input",
+                                "id": input_object.id,
+                                "url": input_object.data.text.url,
+                                "value": value
+                            }
+                        st.write(dt)
+                        yield(dt)
+                    else:
+                        return #leave
 
-    kwargs={}
-    st = get_last_id()
-    if str:
-        kwargs["last_id"]=st
-
-    stream_inputs_response = stub.StreamInputs(
-        service_pb2.StreamInputsRequest(
-            user_app_id=get_userDataObject(),
-            per_page=int(page_size),
-            **kwargs
-        ),
-        metadata=user_metadata
-    )
-    if stream_inputs_response.status.code != status_code_pb2.SUCCESS:
-        yield({"status":stream_inputs_response.status})
-        raise Exception("Stream inputs failed, status: " + stream_inputs_response.status.description)
-    for input_object in stream_inputs_response.inputs:
-        data2 =  requests.get(input_object.data.text.url)
-        value =   data2.text
-        yield({
-            "type": "input",
-            #"res": data2.resu
-            "id": input_object.id,
-            "url": input_object.data.text.url,
-            "value":             value})
 
 def observe():
-    wf = get_workflow_gui()
-    for app in apps():
-        global app_id
-        app_id = app.id
-        st.write("App",app.name)
-
-        # yield from unassigned_inputs(app)
-        for dataset in datasets(app):
-            st.write("Dataset",dataset)
-            for input in inputs(dataset):
-                yield {"dataset": [ app , dataset, input ]}
-
-        #just do the inputs last ...
+    #for x in prepare():
+    #    yield x
+    amode =get_mode()
+    st.write(amode)
+    
+    if amode == "concept-inputs":
         yield from find_inputs(get_concept_id())
+    elif amode == "one-input":
+        #http://192.168.1.163:8502/?concept_id=python&app_id=Introspector-LLama2-Hackathon-Demo1&page_size=3&workflow=RakeItUpV3Critical_Reconstruction_of4&data_url=https%3A%2F%2Fdata.clarifai.com%2Forig%2Fusers%2Frxngfnlo5uhx%2Fapps%2FIntrospector-LLama2-Hackathon-Demo1%2Finputs%2Ftext%2Fe0062df82800d031e8a8bfc3a6b21213&
+        # input_id=f78ca91871b74e249033d5179e730dd9&mode=one-input
+        yield from get_input(get_input_id())
+    else:
+        st.write("something")
 
 def ooda():
     for sample in observe():
@@ -646,34 +586,26 @@ def load_pat():
     return st.secrets.CLARIFAI_PAT
 
 
-def get_default_models():
-    if "DEFAULT_MODELS" not in st.secrets:
-        st.error("You need to set the default models in the secrets.")
-        st.stop()
-    models_list = [x.strip() for x in st.secrets.DEFAULT_MODELS.split(",")]
-    models_map = {}
-    select_map = {}
-    for i in range(len(models_list)):
-        m = models_list[i]
-        id, rem = m.split(":")
-        author, app = rem.split(";")
-        models_map[id] = {}
-        models_map[id]["author"] = author
-        models_map[id]["app"] = app
-        select_map[id + " : " + author] = id
-    return models_map, select_map
-
-
+# def get_default_models():
+#     if "DEFAULT_MODELS" not in st.secrets:
+#         st.error("You need to set the default models in the secrets.")
+#         st.stop()
+#     models_list = [x.strip() for x in st.secrets.DEFAULT_MODELS.split(",")]
+#     models_map = {}
+#     select_map = {}
+#     for i in range(len(models_list)):
+#         m = models_list[i]
+#         id, rem = m.split(":")
+#         author, app = rem.split(";")
+#         models_map[id] = {}
+#         models_map[id]["author"] = author
+#         models_map[id]["app"] = app
+#         select_map[id + " : " + author] = id
+#     return models_map, select_map
 
 def main():
     global our_apps
-    #st.set_page_config(layout="wide")
-
     our_apps = client.list_apps()
-
-
-
-    #if check_password():
     if True: # skip password for now
         for x in ooda():
             if isinstance(x,str):
@@ -688,38 +620,25 @@ def main():
     models = {}
     dataset_index = {}
 
-    for app in our_apps:
-        datasets = app.list_datasets()
-        for ds in datasets:
-            name = ds.dataset_info.id
-            if app not in app_datasets:
-                app_datasets[app.name]={}
-            if name not in app_datasets[app.name]:
-                app_datasets[app.name][name] = ds
+    # for app in our_apps:
+    #     datasets = app.list_datasets()
+    #     for ds in datasets:
+    #         name = ds.dataset_info.id
+    #         if app not in app_datasets:
+    #             app_datasets[app.name]={}
+    #         if name not in app_datasets[app.name]:
+    #             app_datasets[app.name][name] = ds
         
-            dataset_index[name] = ds
-    for model_name in models:
-        idn = "cf_dataset_" + model_name.lower()
-        if idn not in dataset_index:
-            dataset = app.create_dataset(dataset_id=idn)
-        else:
-            models[model_name].set_dataset(dataset_index[idn])
-        models[model_name].sync()
+    #         dataset_index[name] = ds
+    # for model_name in models:
+    #     idn = "cf_dataset_" + model_name.lower()
+    #     if idn not in dataset_index:
+    #         dataset = app.create_dataset(dataset_id=idn)
+    #     else:
+    #         models[model_name].set_dataset(dataset_index[idn])
+    #     models[model_name].sync()
 
-#### experimental args
-# Retrieve URL parameters
-
-
-# defaults to be populated by apps
-args = {
-    # "page_size": 10,
-    # "last_id": "",
-    # "concept_id": "python",
-    # "workflow":"RakeItUpV3a_self_referential_tensor_containing4",
-    # "num_runs": 1,
-    # "output_location": "",
-    # "summarize_output": False
-}
+args = {}
 
 
 def get_args():

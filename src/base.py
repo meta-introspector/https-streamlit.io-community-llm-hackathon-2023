@@ -7,7 +7,6 @@ from clarifai.client.user import User
 import random
 import string
 
-
 class BaseClarifaiModel:
     def __init__(self, user_id, app_id):
         self.config = None

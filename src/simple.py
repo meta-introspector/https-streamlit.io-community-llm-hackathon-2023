@@ -7,9 +7,7 @@ from clarifai.auth.helper import ClarifaiAuthHelper
 
 class SimpleContextClarifaiModel(BaseClarifaiModel):
     def __init__(self, app_id):
-        self.config = None
-
-        
+        self.config = None        
         user_id =st.secrets["clarifai_user_id"]
 
         #app_id = self.read_app_id_from_config()
