@@ -117,7 +117,7 @@ PAT = st.secrets["CLARIFAI_PAT"]
 USER_ID =st.secrets["clarifai_user_id"]
 channel = ClarifaiChannel.get_grpc_channel()
 stub = service_pb2_grpc.V2Stub(channel)
-metadata = (('authorization', 'Key ' + PAT),)
+user_metadata = (('authorization', 'Key ' + PAT),)
 
 userDataObject= None
 def get_userDataObject():
@@ -285,12 +285,12 @@ for x in get_concepts():
 #selected_concept = st.selectbox("concepts",concept_list)
 
 def run_infer(value, url):
-    st.write("infer",value, url)
+    #st.write("infer",value, url)
 
     #st.write("selected",wf)
     workflow = get_workflow()
     data_url = url
-    st.write("selected",selected_app)
+    #st.write("selected",selected_app)
     ci = get_concept_id()
 
     concepts=[workflow]
@@ -298,8 +298,8 @@ def run_infer(value, url):
         concepts.append(ci)
 
     try:
-        ret = call_api.call_workflow(stub, metadata, get_userDataObject(), workflow, data_url, concepts)
-        st.write(ret)
+        ret = call_api.call_workflow(stub, user_metadata, get_userDataObject(), workflow, data_url, concepts)
+        #st.write(ret)
     except Exception as e:
         st.write(e)
 
@@ -497,7 +497,7 @@ def find_inputs(concept_id):
                 )
             ]
         ),
-        metadata=metadata
+        metadata=user_metadata
     )
     
     if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
@@ -594,7 +594,7 @@ def unassigned_inputs(data):
             per_page=int(page_size),
             **kwargs
         ),
-        metadata=metadata
+        metadata=user_metadata
     )
     if stream_inputs_response.status.code != status_code_pb2.SUCCESS:
         yield({"status":stream_inputs_response.status})
