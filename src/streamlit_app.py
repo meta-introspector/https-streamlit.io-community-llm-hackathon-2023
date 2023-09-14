@@ -41,8 +41,8 @@ def get_workflow_gui():
     global selected_workflows
     value = None
     #st.write("workflow params",params)
-    if "workflow" not in params:
-        params["workflow"] = "RakeItUpV3Using_emojis_instead_of_words_for0" # default                
+    #if "workflow" not in params:
+        #params["workflow"] = "RakeItUpV3Using_emojis_instead_of_words_for0" # default                
     if "workflow" in params:        
         value=params.get("workflow",)
         #st.write("workflow arg value",value)
