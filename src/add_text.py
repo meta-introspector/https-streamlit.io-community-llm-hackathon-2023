@@ -34,7 +34,7 @@ def add_text(stub,userDataObject,user_metadata,fstr, concepts=[], custom_metadat
     #st.write(fstr)
     st.write("Posted new results")
     st.code(post_inputs_response)
-    st.code(post_inputs_response.outputs[0].data.text.raw)
+    #st.code(post_inputs_response.outputs[0].data.text.raw)
 
 
 
