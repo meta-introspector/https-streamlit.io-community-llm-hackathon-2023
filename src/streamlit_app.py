@@ -377,7 +377,8 @@ def toemoji(data):
             q= st.experimental_get_query_params()
             q.update(app_args)
             q["mode"] = "one-input"
-            q["data_url"] = url
+            encoded_url = urllib.parse.urlencode({"url":url}, doseq=True)
+            q["data_url"] = encoded_url
             q["input_id"] = aid
             #q["1workflow"] = get_workflow()
 
