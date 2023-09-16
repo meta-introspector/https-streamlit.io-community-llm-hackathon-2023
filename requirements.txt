@@ -51,7 +51,9 @@ rpds-py==0.10.2
 six==1.16.0
 smmap==5.0.0
 soupsieve==2.5
-streamlit==1.23.1
+streamlit
+#git+https://github.com/meta-introspector/streamlit#egg=streamlit
+
 streamlit-diff-viewer==0.0.2
 streamlit-js-eval==0.1.5
 tenacity==8.2.3
