@@ -1,24 +1,9 @@
-# #begin inject
-
-# from streamlit.web.server.server import Server
-# server_create_app_backup = Server._create_app
-
-# def server_create_app_hack(self):
-#     app = server_create_app_backup(self)
-#     print("PATCH",app)
-
-
-#     return app
-# Server._create_app=server_create_app_hack
-
-
 #begin inject
 from streamlit.web.server.server import Server
-import streamlit as st
+
 server_create_app_backup = Server._create_app
 def server_create_app_hack(self):
     app = server_create_app_backup(self)
     print("PATCH",app)
-    st.write(app)
     return app
 Server._create_app=server_create_app_hack
