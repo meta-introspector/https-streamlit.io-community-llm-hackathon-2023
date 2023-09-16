@@ -40,11 +40,11 @@ with open(os.path.join(target,"server.py"),"w") as fo:
 
 ctx =streamlit.runtime.scriptrunner.script_runner.get_script_run_ctx()
 
-st.write("CTX",ctx)
-st.write("CTX",str(ctx))
-st.write("Sess",dir(ctx))
-for x in dir(ctx):
-    st.write("DEBUG",x,getattr(ctx,x,"None"))
+# st.write("CTX",ctx)
+# st.write("CTX",str(ctx))
+# st.write("Sess",dir(ctx))
+# for x in dir(ctx):
+#     st.write("DEBUG",x,getattr(ctx,x,"None"))
 
 
     
