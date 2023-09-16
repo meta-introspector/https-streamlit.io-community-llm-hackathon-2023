@@ -257,7 +257,6 @@ class Server:
         LOGGER.debug("Starting server...")
 
         app = self._create_app()
-        print("APP",app)
         start_listening(app)
 
         port = config.get_option("server.port")
@@ -273,7 +272,7 @@ class Server:
     def _create_app(self) -> tornado.web.Application:
         """Create our tornado web app."""
         base = config.get_option("server.baseUrlPath")
-        #raise Exception("err")
+
         routes: List[Any] = [
             (
                 make_url_path_regex(base, STREAM_ENDPOINT),
@@ -399,10 +398,9 @@ class Server:
 
 
 def _set_tornado_log_levels() -> None:
-    pass
-    #if not config.get_option("global.developmentMode"):
+    if not config.get_option("global.developmentMode"):
         # Hide logs unless they're super important.
         # Example of stuff we don't care about: 404 about .js.map files.
-logging.getLogger("tornado.access").setLevel(logging.DEBUG)
-logging.getLogger("tornado.application").setLevel(logging.DEBUG)
-logging.getLogger("tornado.general").setLevel(logging.DEBUG)
+        logging.getLogger("tornado.access").setLevel(logging.ERROR)
+        logging.getLogger("tornado.application").setLevel(logging.ERROR)
+        logging.getLogger("tornado.general").setLevel(logging.ERROR)
