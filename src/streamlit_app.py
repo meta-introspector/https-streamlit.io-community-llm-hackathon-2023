@@ -119,12 +119,19 @@ with col2:
 
 
 with col1:
-
+    app_args["base-url"] = st.text_input("base-url",
+                                         key="base-url",
+                                         value=params.get("base-url","https://org-clarifai-beta.streamlit.app"),
+                                         help="for jwt")
     app_args.update(
         dict(
-            app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1"),
-            base_url = st.text_input("base-url", key="base-url", value=params.get("base-url","https://org-clarifai-beta.streamlit.app"), help="for jwt"),
-            target_url = st.text_input("target_url", key="target-url", value=params.get("target-url",""), help="for redirects"),
+            app_id = st.text_input("app_id",
+                                   help="id",
+                                   value="Introspector-LLama2-Hackathon-Demo1"),
+            target_url = st.text_input("target_url",
+                                       key="target-url",
+                                       value=params.get("target-url",""),
+                                       help="for redirects"),
             jwt_url = st.text_input("jwt_url",
                                     key="jwt-url",
                                     value=params.get(
@@ -155,7 +162,7 @@ def show_workflows():
             [
                 "RakeItUpV3Rewriting_of4",
                 "RakeItUpV2rewritesystems",
-                "RakeItUpV3Criticaal_Reconstruction_of4",
+                "RakeItUpV3Critical_Reconstruction_of4",
                 "RakeItUpV3review_a_clarifaipython_App_that_will1",
              ],
             default_value="RakeItUpV3Criticaal_Reconstruction_of4",
@@ -174,7 +181,7 @@ def get_concept_id():
     return app_args['concept_id']
 
 def get_base_url():
-    return app_args['base_url']
+    return app_args['base-url']
 def get_target_url():
     return app_args['target_url']
 
@@ -196,7 +203,6 @@ def get_page_size():
 
 # Display the result based on parameters
 
-
 PAT = st.secrets["CLARIFAI_PAT"]
 USER_ID =st.secrets["clarifai_user_id"]
 channel = ClarifaiChannel.get_grpc_channel()
@@ -205,7 +211,12 @@ user_metadata = (('authorization', 'Key ' + PAT),)
 
 def check_jwt(kwargs):
     oparams = st.experimental_get_query_params()
-    st.write(oparams)
+    #st.write("DEBUGcheckjwt",oparams)
+    q= st.experimental_get_query_params()
+    q.update(app_args)
+    q["resource"] = str(kwargs)
+    encoded_url = urllib.parse.urlencode(q, doseq=True)
+    
     if "_jwt" in oparams:
         token = oparams["_jwt"][0]
         try:
@@ -213,26 +224,26 @@ def check_jwt(kwargs):
             return True
         except jwt.ExpiredSignatureError:
             st.error("JWT token has expired")
+            st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
             return False
-                   #InvalidSignatureError("Signature
+        # InvalidSignatureError("Signature
         except jwt.InvalidSignatureError as e:
             st.error( f"Invalid _jwtx: {str(e)}")
+            st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)            
             #st.write(e)
             return False
 
         except jwt.InvalidTokenError as e:
             st.error( "Invalid JWT token")
+            st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
             st.write(e)
             return False
         except Exception as e:
-            st.error( "ERrror",e)
+            st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
+            st.error( "Errror",e)
             st.write(e)
             return False
     else:
-        q= st.experimental_get_query_params()
-        q.update(app_args)
-        q["resource"] = str(kwargs)
-        encoded_url = urllib.parse.urlencode(q, doseq=True)
         st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
         return False
         #st.write("Decoded JWT Payload:")
@@ -247,9 +258,9 @@ def get_user_metadata( _type, #read or write
     if _type == "read":
         return user_metadata
     elif _type == "write":
-        st.write("get uma test2",kwargs)
+        #st.write("get uma test2",kwargs)
         if check_jwt(kwargs):
-            st.write("test")
+            #st.write("test")
             return user_metadata
         else:
             st.write("error auth")
@@ -267,35 +278,6 @@ seen = {}
 our_apps= {}
 os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
 client = User(user_id=st.secrets["clarifai_user_id"])
-
-# from https://docs.streamlit.io/knowledge-base/deploy/authentication-without-sso
-def check_password():
-    """Returns `True` if the user had the correct password."""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # don't store password
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        return False
-    elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error.
-        st.text_input(
-            "Password", type="password", on_change=password_entered, key="password"
-        )
-        st.error("😕 Password incorrect")
-        return False
-    else:
-        # Password correct.
-        return True
 
 def doapply(data):
     for x in data:
@@ -349,6 +331,23 @@ def start_infer_button(workflow,iid, text,url):
         key= text + "button",
         help=str(text)
     )
+def get_data_text(iid,data):
+
+    if iid in data:
+        return data[iid]['value']
+    else:
+        st.error("CANOTFIND")
+        #,iid,data)
+        st.write("ID",iid)
+        st.write("IDS",list(data.keys()))
+        st.dataframe(data)
+
+def get_data_url(iid, data):
+    #return "todo"
+    if iid in data:
+        return data[iid]['url']
+    else:
+        st.error(data)
 
 def decide(data):
 
@@ -370,11 +369,17 @@ def decide(data):
             yield from myselect([data1 for data1 in data.items()])  # let the user select which ones
 
     show_workflows()
-
-    start_infer_button(get_workflow(),
-                       iid = get_input_id(),
-                       text="text",
-                       url="url")
+    st.dataframe(data)
+    #data_ids = {}
+    #for xy in data:
+    #    xyz = data[xy]        
+    #    data_ids[xyz['id']] =data[xy]
+    for iid in data:
+        tt = get_data_text(iid,data)
+        start_infer_button(get_workflow() + " " + tt[0:50],
+                       iid = iid,
+                           text=tt,
+                       url=get_data_url(iid,data))
 m  = emojis.Emojis()
 concepts1 = {}
 def get_concepts():
