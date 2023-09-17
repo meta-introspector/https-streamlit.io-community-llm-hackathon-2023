@@ -29,10 +29,11 @@ def main():
     #"secret":"60"
 
     # User input for resource, expiration, and secret key
-    #context = st.text_input("ContextKey:",params.get("context","standard",))        
+    #context = st.text_input("ContextKey:",params.get("context","standard",))
+    base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target")
     resource = st.text_input("Resource ID:",params.get("resource",""),key="res")
     expiration = st.number_input("Expiration (minutes):", min_value=1, value=int(params.get("expiration",60)), key="expire")
-    secret = st.text_input("Secret Key:",params.get("secret",""), key="secret")
+    secret = st.text_input("Secret Key:",params.get("secret",""), key="secret", type="password")
     jwt_token = st.text_input("Enter JWT Token",params.get("_jwt",""), key="jwt")
 
     # Generate URLs and JWT token
@@ -45,15 +46,15 @@ def main():
 
             query_params["expiration"]=expiration
             encoded_query1 = urllib.parse.urlencode(query_params, doseq=True)
-            st.markdown(f"* Share [URL with Query Parameters {encoded_query1}](/?{encoded_query1})")
+            st.markdown(f"* Share [URL with Query Parameters {encoded_query1}]({base_url}/?{encoded_query1})")
 
             query_params["resource"]=resource
             encoded_query2 = urllib.parse.urlencode(query_params, doseq=True)
-            st.markdown(f"* Share [URL with Query Parameters {encoded_query2}](/?{encoded_query2})")
+            st.markdown(f"* Share [URL with Query Parameters {encoded_query2}]({base_url}/?{encoded_query2})")
 
             query_params["secret"]=secret
             encoded_query3 = urllib.parse.urlencode(query_params, doseq=True)
-            st.markdown(f"* SECRETShare [URL with Query Parameters {encoded_query3}](/?{encoded_query3})")
+
 
             st.markdown(f"* JWT Token:")
             st.code(token)
@@ -63,7 +64,10 @@ def main():
             st.session_state
             for x in st.session_state:
                 v = st.session_state[x]
-                st.write("DEBUG",x,v)
+                #st.write("DEBUG",x,v)
+                
+            st.warning("DONT SHARE THIS UNLESS...")
+            st.markdown(f"# SECRETS\n*SECRET [URL with Query Parameters {encoded_query3}](base_url/?{encoded_query3})")
 
         else:
             st.warning("Please fill in all fields.")
