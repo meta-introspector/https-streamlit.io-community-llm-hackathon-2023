@@ -30,7 +30,7 @@ def main():
 
     # User input for resource, expiration, and secret key
     #context = st.text_input("ContextKey:",params.get("context","standard",))
-    base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target")
+    base_url = st.text_input("base-url", key="base-url", value=params.get("base-url",""), help="for the target")
     resource = st.text_input("Resource ID:",params.get("resource",""),key="res")
     expiration = st.number_input("Expiration (minutes):", min_value=1, value=int(params.get("expiration",60)), key="expire")
     secret = st.text_input("Secret Key:",params.get("secret",""), key="secret", type="password")

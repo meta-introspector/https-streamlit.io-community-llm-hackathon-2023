@@ -123,7 +123,8 @@ with col1:
     app_args.update(
         dict(
             app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1"),
-            base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target"),
+            base_url = st.text_input("base-url", key="base-url", value=params.get("base-url","https://org-clarifai-beta.streamlit.app"), help="for jwt"),
+            target_url = st.text_input("target_url", key="target-url", value=params.get("target-url",""), help="for redirects"),
             jwt_url = st.text_input("jwt_url",
                                     key="jwt-url",
                                     value=params.get(
@@ -173,7 +174,9 @@ def get_concept_id():
     return app_args['concept_id']
 
 def get_base_url():
-    return app_args['concept_id']
+    return app_args['base_url']
+def get_target_url():
+    return app_args['target_url']
 
 def get_input_id():
     return app_args['input_id']
@@ -516,7 +519,7 @@ def to_url(data):
 
             #st.markdown(f"* [#{aid}](/?{encoded_query})")
             #data = {}
-            data["link_text"] = f"* [#{aid}](/{get_base_url()}?{encoded_query})"
+            data["link_text"] = f"* [#{aid}]({get_target_url()}/?{encoded_query})"
 
             return data
             #st.write(parsed_url)
