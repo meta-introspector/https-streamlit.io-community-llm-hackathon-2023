@@ -449,8 +449,8 @@ def get_workflow():
 
 
 def run_infer(value, url):
-
-    #st.write("infer",value, url)
+    with st.chat_message("user"):
+        st.write("infer",value, url)
 
     #st.write("selected",wf)
     workflow = get_workflow()
