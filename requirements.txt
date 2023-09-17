@@ -71,3 +71,5 @@ websockets==10.4
 zipp==3.16.2
 ratelimit==2.2.1
 pyjwt
+streamlit-reveal-slides
+streamlit_code_editor
