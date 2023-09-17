@@ -123,7 +123,14 @@ with col1:
     app_args.update(
         dict(
             app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1"),
-            base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target")
+            base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target"),
+            jwt_url = st.text_input("jwt_url",
+                                    key="jwt-url",
+                                    value=params.get(
+                                        "jwt-url",                                        
+                                        "https://jwtjwt.streamlit.app/"
+                                    ),
+                                    help="where to send requests")
         ))
 
     # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
@@ -158,10 +165,9 @@ def show_workflows():
     #output_location = st.text_input("Output Location", value=params.get("output_location", ""), help="specify where to store the output, whether it's a file path or a cloud storage location."                                    ),
     #summarize_output = st.checkbox("Summarize Output",                                   value=params.get("summarize_output", False),                                                                      help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
 
-
-
-
 #####
+def get_jwt_url():    
+    return app_args['jwt_url']
 
 def get_concept_id():
     return app_args['concept_id']
@@ -223,7 +229,7 @@ def check_jwt(kwargs):
         q= st.experimental_get_query_params()
         q.update(app_args)
         encoded_url = urllib.parse.urlencode(q, doseq=True)
-        st.error( f"add &_jwt= to query parameter, see https://jtwjwt.streamlit.app/?"+encoded_url)
+        st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
         return False
         #st.write("Decoded JWT Payload:")
         #st.write(decoded_result)
