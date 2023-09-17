@@ -231,6 +231,7 @@ def check_jwt(kwargs):
     else:
         q= st.experimental_get_query_params()
         q.update(app_args)
+        q["resource"] = str(kwargs)
         encoded_url = urllib.parse.urlencode(q, doseq=True)
         st.error( f"Need  &_jwt=, see " + get_jwt_url() + "/?"+encoded_url)
         return False
