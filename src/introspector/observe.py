@@ -1,5 +1,6 @@
 from .modes import get_inputs as get_mode
 from .concepts import get_inputs as get_concept
+from .get_inputs import get_ont_inputs
 from .find_inputs import find_inputs
 
 def observe():
@@ -8,7 +9,7 @@ def observe():
     
     if mode == "concept-inputs":
         yield from find_inputs(concept)
-    elif amode == "one-input":
-        yield from get_inputs.get_inputs()
+    elif mode == "one-input":
+        yield from get_one_input()
     else:
         st.write("something")
