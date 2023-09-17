@@ -13,8 +13,3 @@ def list_input(title, choices, key, default_value):
     )
 
     return selected_choice
-```
-
-Now, you can use this `list_input` function to create list-based inputs. Here's how you can use it for your `get_concept` function:
-
-```python

@@ -1,5 +1,5 @@
 from .modes import get_inputs as get_mode
-from .concepts import get_inputs as get_concept
+from .concepts import get_concept
 from .get_inputs import get_ont_inputs
 from .find_inputs import find_inputs
 
