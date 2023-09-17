@@ -1,4 +1,5 @@
 import os
+import jwt
 from ratelimit import limits, RateLimitException
 from collections.abc import Iterable
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
@@ -7,12 +8,17 @@ import types
 import call_api
 import emojis
 import requests
-import urllib.parse        
+import urllib.parse
 from clarifai.client.user import User
 from clarifai_grpc.grpc.api import resources_pb2
 from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
+
+os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
+password = st.secrets["password"]
+client = User(user_id=st.secrets["clarifai_user_id"])
+
 
 col1,col2,col3 = st.columns(3)
 col4,col5 = st.columns(2)
@@ -25,7 +31,7 @@ params = {
 def list_input(title, choices=[], key=None, choices_key=None, default_value=None):
     if not key:
         key = title
-        
+
     if not choices_key:
         choices_key = key +"-choices"
     opt_index = 0
@@ -34,10 +40,10 @@ def list_input(title, choices=[], key=None, choices_key=None, default_value=None
         if choices_key in oparams:
             for value in oparams[choices_key]:
                 choices.append(toemoji(value))
-    
+
     if key in params:
         default_value = params[key]
-        
+
     if default_value in choices:
         opt_index = choices.index(default_value)
 
@@ -50,30 +56,35 @@ def list_input(title, choices=[], key=None, choices_key=None, default_value=None
 
     return selected_choice
 
-        
-    
+
+
 @limits(calls=5, period=1)
 def get_input(input_id):
     get_input_response = stub.GetInput(
         service_pb2.GetInputRequest(
-            user_app_id=get_userDataObject(), 
+            user_app_id=get_userDataObject(),
             input_id=input_id
         ),
-        metadata=user_metadata
+        metadata=get_user_metadata( _type="read",
+                                    _id=input_id,
+                                    _table="inputs",
+                                   )
+
+
     )
 
     #if get_input_response.status.code == 10000:
     #    print("RES1",get_input_response)
-    #    print("STAT",get_input_response.status)        
+    #    print("STAT",get_input_response.status)
         #print("RATELIMIT")
         #return
-        
+
     if get_input_response.status.code != status_code_pb2.SUCCESS:
         #print("STATUS",get_input_response.status)
         #print("STATUSCODE",stream_inputs_response.status.code)
         #raise Exception("Get input failed, status: " + get_input_response.status.description)
         st.error("Cannot find input")
-        return 
+        return
     input_object = get_input_response.input
     #print("DEBUG" +str(input_object))
     #pprint.pprint(
@@ -99,25 +110,29 @@ with col2:
     #     help="Concept id to search for" ,
     #     value =params.get("concept_id","python"))))
 
-    app_args.update(dict(    
+    app_args.update(dict(
         concept_id = list_input(
-            "Concept",            
+            "Concept",
             ["python","Introspector"],
-            key="concept_id",            
+            key="concept_id",
             default_value="python")))
 
-                         
+
 with col1:
-    app_args.update(dict(    
-    app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1")))
-                
+
+    app_args.update(
+        dict(
+            app_id = st.text_input("app_id", help="id" , value ="Introspector-LLama2-Hackathon-Demo1"),
+            base_url = st.text_input("base_url", key="base-url", value=params.get("base-url",""), help="for the target")
+        ))
+
     # number_input(label, min_value=None, max_value=None, value=, step=None, format=None, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False, label_visibility="visible")
 with col1:
     app_args.update(dict(    page_size = st.number_input("Page Size", min_value=1,key="page_size",
                                 help="Use a number input widget to allow users to specify the page size. This will control how many items are displayed per page",
                                 value=int(params.get("page_size", "3")))))
     #last_id = st.text_input("Last Id", value=params.get("last_id", ""),                            help= "Last Id as a starting token, enter or select the token."                                   ),
-with col3:    
+with col3:
     app_args.update(dict(    input_id = st.text_input(
         "input Id",
         value=params.get("input_id", ""),
@@ -126,7 +141,7 @@ with col3:
     )))
 def show_workflows():
     with col4:
-        app_args.update(dict(    
+        app_args.update(dict(
             workflow = list_input(
             "workflow",
             [
@@ -136,13 +151,13 @@ def show_workflows():
                 "RakeItUpV3review_a_clarifaipython_App_that_will1",
              ],
             default_value="RakeItUpV3Criticaal_Reconstruction_of4",
-            
+
         )))
-    
+
     #num_runs = st.number_input("Number of Runs",                               min_value=1,=int(params.get("num_runs", 1)),                               help="how many times they want to run the selected workflow." ),
     #output_location = st.text_input("Output Location", value=params.get("output_location", ""), help="specify where to store the output, whether it's a file path or a cloud storage location."                                    ),
     #summarize_output = st.checkbox("Summarize Output",                                   value=params.get("summarize_output", False),                                                                      help = "toggle summarization on or off. When summarization is enabled, provide a summary of the outputs; otherwise, display detailed outputs."  ),
-    
+
 
 
 
@@ -151,13 +166,16 @@ def show_workflows():
 def get_concept_id():
     return app_args['concept_id']
 
+def get_base_url():
+    return app_args['concept_id']
+
 def get_input_id():
     return app_args['input_id']
 
 #def add_workflows(w):
 #    global workflows
 #    workflows[w.id] = w
-    
+
 def get_last_id():
     return app_args['last_id']
 
@@ -176,17 +194,67 @@ channel = ClarifaiChannel.get_grpc_channel()
 stub = service_pb2_grpc.V2Stub(channel)
 user_metadata = (('authorization', 'Key ' + PAT),)
 
+def check_jwt(kwargs):
+    oparams = st.experimental_get_query_params()
+    st.write(oparams)
+    if "_jwt" in oparams:
+        token = oparams["_jwt"][0]
+        try:
+            decoded_payload = jwt.decode(token, password, algorithms=["HS256"])
+            return True
+        except jwt.ExpiredSignatureError:
+            st.error("JWT token has expired")
+            return False
+                   #InvalidSignatureError("Signature
+        except jwt.InvalidSignatureError as e:
+            st.error( f"Invalid _jwtx: {str(e)}")
+            #st.write(e)
+            return False
+
+        except jwt.InvalidTokenError as e:
+            st.error( "Invalid JWT token")
+            st.write(e)
+            return False
+        except Exception as e:
+            st.error( "ERrror",e)
+            st.write(e)
+            return False
+    else:
+        q= st.experimental_get_query_params()
+        q.update(app_args)
+        encoded_url = urllib.parse.urlencode(q, doseq=True)
+        st.error( f"add &_jwt= to query parameter, see https://jtwjwt.streamlit.app/?"+encoded_url)
+        return False
+        #st.write("Decoded JWT Payload:")
+        #st.write(decoded_result)
+
+def get_user_metadata( _type, #read or write
+                       #_id, #what to
+                       #_table="inputs",
+                       **kwargs
+                      ):
+
+    if _type == "read":
+        return user_metadata
+    elif _type == "write":
+        st.write("get uma test2",kwargs)
+        if check_jwt(kwargs):
+            st.write("test")
+            return user_metadata
+        else:
+            st.write("error auth")
+
+
 userDataObject= None
 def get_userDataObject():
     global userDataObject
     if userDataObject is None:
         userDataObject = resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=get_app_id())
-    return userDataObject        
-    
+    return userDataObject
+
 # globals
 seen = {}
 our_apps= {}
-#app_datasets = {}
 os.environ["CLARIFAI_PAT"] = st.secrets["CLARIFAI_PAT"]
 client = User(user_id=st.secrets["clarifai_user_id"])
 
@@ -218,7 +286,6 @@ def check_password():
     else:
         # Password correct.
         return True
-
 
 def doapply(data):
     for x in data:
@@ -260,6 +327,18 @@ def myselect(data):
             st.write("You selected:", options)
             yield options
 
+def start_infer_button(workflow,iid, text,url):
+    options = st.button(
+        workflow,
+        on_click=run_infer,
+        kwargs={
+            #"concept":selected_concept,
+            "value":text,
+            "url":url
+        },
+        key= text + "button",
+        help=str(text)
+    )
 
 def decide(data):
 
@@ -272,15 +351,20 @@ def decide(data):
                 name = ""
                 if hasattr(data,"name"):
                     name = data.name()
-                    
+
                 data = [ "Just " + name + str(type(data)) + " debug "+ str(data) ]
                 yield myselect(data)  # let the user select which ones
                 return
-            
+
             #for data1 in data:
-            yield from myselect([data1 for data1 in data])  # let the user select which ones
+            yield from myselect([data1 for data1 in data.items()])  # let the user select which ones
+
     show_workflows()
 
+    start_infer_button(get_workflow(),
+                       iid = get_input_id(),
+                       text="text",
+                       url="url")
 m  = emojis.Emojis()
 concepts1 = {}
 def get_concepts():
@@ -313,7 +397,7 @@ def get_concepts():
                         f"The concept of {orig} in '''{{data.text.raw}}'''",
                         f"The concept of {orig} in consideration of the special case of {x1} in '''{{data.text.raw}}'''",
                         f"The concept of {orig} and {x1} in '''{{data.text.raw}}'''",
-                        f"Relate {orig} to '''{{data.text.raw}}'''",                        
+                        f"Relate {orig} to '''{{data.text.raw}}'''",
                 ]):
                     #print("DEBUG!ORIG", orig)
                     #print("DEBUG!",  x1)
@@ -347,9 +431,10 @@ def get_workflow():
             v = st.session_state[x]
             st.write("DEBUG1",x,v)
         return "default-workflow"
-    
+
 
 def run_infer(value, url):
+
     #st.write("infer",value, url)
 
     #st.write("selected",wf)
@@ -362,16 +447,22 @@ def run_infer(value, url):
     concepts=[workflow]
     if ci :
         concepts.append(ci)
-
     try:
-        ret = call_api.call_workflow(stub, user_metadata, get_userDataObject(), workflow, data_url, concepts)
+
+        ret = call_api.call_workflow(stub,
+                                     get_user_metadata( _type="write",
+                                                        _call="workflow",
+                                                        _on=data_url,
+                                                        _for=concepts)
+                                     , get_userDataObject(), workflow, data_url, concepts)
+
         #st.write(ret)
     except Exception as e:
         st.write("ERROR",e)
         raise e
 
 def workflow_button(workflow):
-    
+
     options = st.button(workflow,
                         on_click=run_infer,
                         kwargs={
@@ -383,7 +474,7 @@ def workflow_button(workflow):
                         help=str(q)
                         )
     seen[name]=options
-            
+
 def to_url(data):
     if isinstance(data, types.GeneratorType):
         return "GEN"
@@ -393,7 +484,7 @@ def to_url(data):
             url = data["url"]
             aid = data["id"]
             name = va + "button"
-            
+
             #st.write("translate this into a structured emoji representation?",url)
 
             # Get the current URL as a string
@@ -407,19 +498,20 @@ def to_url(data):
 
             # generic
             #for x in st.session_state:
-            #    q[f"st_{x}"] = str(st.session_state[x])                
+            #    q[f"st_{x}"] = str(st.session_state[x])
                 #q[f"st_{x}"] = str(st.session_state[x])
-                
+
             #q["input_name"] = name
             #q["input_value"] = va # skip this for shortness
 
 
             encoded_query = urllib.parse.urlencode(q, doseq=True)
-            #st.write(encoded_query)            
-            
+            #st.write(encoded_query)
+
             #st.markdown(f"* [#{aid}](/?{encoded_query})")
             #data = {}
-            data["link_text"] = f"* [#{aid}](/?{encoded_query})"
+            data["link_text"] = f"* [#{aid}](/{get_base_url()}?{encoded_query})"
+
             return data
             #st.write(parsed_url)
             # Replace the query part of the URL with the new string
@@ -439,6 +531,7 @@ def summarize(data):
     #st.write("DEBUG",data)
     #if isinstance(data, generato):
     total = []
+    akeys = {}
     if isinstance(data, Iterable):
         if isinstance(data, types.GeneratorType):
             for x in data:
@@ -451,19 +544,21 @@ def summarize(data):
             for x in data:
                 u = to_url(x)
                 #st.write("DEBUG2",x)
-                total.append(x["value"])
-
+                v = x["value"]
+                akeys[v] = x
     else:
         st.write("Sum Object not an iterable")
         yield data
-        
+
     #st.write("total")
     #st.write(total)
     #st.dataframe(total)
     #for v in total:
 
-    yield total
-    st.selectbox("Input",total)
+
+    yield akeys
+    st.selectbox("Input",list(akeys.keys()))
+
     #(total, num_rows="dynamic",
     #               height=100,
     #               use_container_width=True,
@@ -471,10 +566,10 @@ def summarize(data):
 
 
 def sort(data):
-    
+
     if isinstance(data, Iterable):
         if isinstance(data, types.GeneratorType):
-            
+
             ret= sorted([x for x in data])
             st.write(ret)
             yield ret
@@ -491,18 +586,18 @@ def sort(data):
 
 
 def filtering(data):
-    
+
     if isinstance(data,str):
         yield data
         st.write("filter",data)
         return
     if isinstance(data, Iterable):
         if isinstance(data, types.GeneratorType):
-            #pass
+
             for x in data:
                 st.write("filter",x)
                 yield x
-        else:            
+        else:
             if "value" in data:
                 #v = data["value"]
                 #st.write("VALUE",data)
@@ -512,7 +607,7 @@ def filtering(data):
     else:
         st.write("Filtering Object not an iterable", data)
         yield data
-        
+
 def orient(data):
     #toemoji(data)
     for x in  filtering(data) :
@@ -568,20 +663,24 @@ def find_inputs(concept_id):
                 )
             ]
         ),
-        metadata=user_metadata
+        metadata=get_user_metadata( _type="read",
+                                    _concept_id=concept_id,
+                                    _table="concepts",
+                                   )
+
     )
-    
+
     if post_annotations_searches_response.status.code != status_code_pb2.SUCCESS:
         st.write("Post searches failed, status: " + post_annotations_searches_response.status.description)
-        
 
-    count = 0 
+
+    count = 0
     for hit in post_annotations_searches_response.hits:
         value  = str(hit)
         for x in hit.ListFields():
             for y in x:
                 if isinstance(y, resources_pb2.Input):
-                    input_object = y 
+                    input_object = y
                     data2 =  requests.get(input_object.data.text.url)
                     value =   data2.text
                     count = count +1
@@ -643,7 +742,7 @@ def main():
                         st.write("app",x)
                     else:
                         st.write("other",x)
-                        
+
     models = {}
     dataset_index = {}
 
@@ -652,7 +751,7 @@ args = {}
 
 def get_args():
     params = st.experimental_get_query_params()
-    
+
 
 
 # Function to apply changes
