@@ -1,4 +1,4 @@
-* Tasks
+b* Tasks
 We will now use org mode as our input for the task system
 
 ** Task1
