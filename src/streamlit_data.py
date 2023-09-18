@@ -133,10 +133,44 @@ def get_target_url():
 # User input for regex pattern
 regex_pattern = st.text_input("Enter the regex pattern:")
 
+import subprocess
+
 
 # Check if the ZIP file exists
 if not os.path.exists(zip_file_path):
     st.error("The ZIP file does not exist.")
+
+    submodule_path = "vendor/data"
+
+    # Create buttons to run submodule commands
+    if st.button("Initialize Submodule"):
+        try:
+            result = subprocess.run(
+                ["git", "submodule", "init", submodule_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            st.header("Submodule Initialization Output:")
+            st.code(result.stdout)
+            st.error(result.stderr)
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+    if st.button("Update Submodule"):
+        try:
+            result = subprocess.run(
+                ["git", "submodule", "update", submodule_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            st.header("Submodule Update Output:")
+            st.code(result.stdout)
+            st.error(result.stderr)
+        except Exception as e:
+            st.error(f"Error: {e}")
+            
 else:
     # Display the list of contents when the ZIP file is available
     st.header("Contents of ZIP File")
