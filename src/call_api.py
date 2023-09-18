@@ -18,7 +18,8 @@ USER_ID = st.secrets["clarifai_user_id"]
 ############################################################################
 
 def call_workflow(stub, user_metadata, userDataObject, workflow, data_url, concepts=[]):
-    st.write("workflow",workflow, "data",data_url)
+    with st.chat_message("user"):
+        st.write("workflow",workflow, "data",data_url)
     post_workflow_results_response = stub.PostWorkflowResults(
         service_pb2.PostWorkflowResultsRequest(
             user_app_id=userDataObject,
@@ -32,8 +33,9 @@ def call_workflow(stub, user_metadata, userDataObject, workflow, data_url, conce
         metadata=user_metadata,
     )
     if post_workflow_results_response.status.code != status_code_pb2.SUCCESS:
-        st.write(post_workflow_results_response.status)
-        st.write(post_workflow_results_response)
+        with st.chat_message("system"):
+            st.write(post_workflow_results_response.status)
+            st.write(post_workflow_results_response)
         raise Exception(
             "Post workflow results failed, status: " + post_workflow_results_response.status.description
         )
@@ -48,13 +50,18 @@ def call_workflow(stub, user_metadata, userDataObject, workflow, data_url, conce
     # Each model we have in the workflow will produce one output.
     for i,output in enumerate(results.outputs):
         model = output.model
-        st.write("Predicted text",i)
-        st.code(output.data.text.raw)
+        #st.write("Predicted text")
 
-        if len(output.data.concepts)>0:
-            st.write("Predicted concepts for the model `%s`" % model.id)
-            for concept in output.data.concepts:
-                st.write("	%s %.2f" % (concept.name, concept.value))
+        with st.chat_message(workflow):
+            st.write(workflow)
+            st.code(i)
+            st.code(output.data.text.raw)
+
+            if len(output.data.concepts)>0:
+                st.write("Predicted concepts for the model `%s`" % model.id)
+                for concept in output.data.concepts:
+                    st.write("	%s %.2f" % (concept.name, concept.value))
+
 
     res = str(results)
     #st.write(dir(results.outputs[0]))
@@ -68,4 +75,8 @@ def call_workflow(stub, user_metadata, userDataObject, workflow, data_url, conce
     
     # Uncomment this line to st.write the full Response JSON
     fstr = str(results.outputs[-1].data.text.raw)
-    add_text.add_text(stub,userDataObject,user_metadata,fstr, concepts, custom_metadata)
+    res = add_text.add_text(stub,userDataObject,user_metadata,fstr, concepts, custom_metadata)
+
+    with st.chat_message(workflow):
+        st.code(res)
+
