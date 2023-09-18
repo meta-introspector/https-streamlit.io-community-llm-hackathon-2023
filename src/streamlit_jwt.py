@@ -41,6 +41,11 @@ def main():
         if resource and expiration and secret:
             query_params, token = url_gen(resource, expiration, secret)
 
+            for x in params:
+                if x not in query_params:
+                    query_params[x] = params[x] #transfer
+                
+            
             # Display URLs and token using st.markdown
             st.subheader("Generated URLs and JWT Token:")
 
