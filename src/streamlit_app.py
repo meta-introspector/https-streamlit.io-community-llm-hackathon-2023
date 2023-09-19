@@ -1,4 +1,5 @@
 import os
+import os, types
 from ratelimit import limits, RateLimitException
 from collections.abc import Iterable
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
@@ -6,6 +7,7 @@ import streamlit as st
 import types
 import call_api
 import emojis
+import asyncio
 import requests
 import urllib.parse        
 from clarifai.client.user import User
@@ -13,22 +15,24 @@ from clarifai_grpc.grpc.api import resources_pb2
 from clarifai_grpc.channel.clarifai_channel import ClarifaiChannel
 from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_code_pb2
+import streamlit.runtime.scriptrunner.script_runner
 
+import streamlit.web.server.routes
+
+import tornado.httpserver
+import tornado.ioloop
+import tornado.iostream
+import tornado.routing
+import tornado.tcpserver
+import tornado.web
+import tornado.websocket
+import traceback
+import inspect
+import patch_server
 oparams = st.experimental_get_query_params()
 params = {
     x: oparams[x][0]  for x in oparams
 }
-
-# workflows = []
-# if "workflows" in params :
-#     for wf in oparams["workflows"]:
-#         workflows.append(wf)
-# else:
-#     try :
-#         workflows_list = [x.strip() for x in st.secrets.get("DEFAULT_WORKFLOWS","RakeItUpV3Critical_Reconstruction_of4").split(",")]
-#         workflows.extend(workflows_list)
-#     except:
-#         workflows.append("RakeItUpV3Critical_Reconstruction_of4")
         
 # modes
 class ConceptInputs():
@@ -79,6 +83,10 @@ modes = {
     "all-inputs": AllInputs(),
     "one-input": OneInputs(),
 }        
+
+if params.get("patch-server",False):
+    st.write("patching server")
+    patch_server.patch_server()
 
 app_args = dict(
     mode = st.text_input("Mode", help="Mode to use", key="mode",value=params.get("mode","concept-inputs")),
@@ -675,8 +683,7 @@ def apply_changes(**args):
     # Update URL with current parameter values
     st.experimental_set_query_params(**args  )
 
-# Add an "Apply" button
-st.button("Apply", on_click=apply_changes, kwargs=app_args)
+
 
 if __name__ == "__main__":
     main()
