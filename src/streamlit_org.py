@@ -1,6 +1,3 @@
-# To create a basic Streamlit app for viewing and editing Org Mode files, you can build upon the Python script I provided earlier. Here's a simple Streamlit version:
-
-# ```python
 import streamlit as st
 import orgparse
 import streamlit as st
@@ -17,14 +14,11 @@ def compute_and_display_diff(existing_text, user_input):
     # Initialize lists to store changes
     added_lines = []
     removed_lines = []
-
     for line in diff:
         if line.startswith('+ '):
             added_lines.append(line[2:])
         elif line.startswith('- '):
             removed_lines.append(line[2:])
-
-
     st.code({
         "new": user_input,
         "added": added_lines,
