@@ -1,0 +1,13 @@
+def observe(): #for x in prepare(): # yield x amode =get_mode()
+st.write(amode)
+
+#+BEGIN_EXAMPLE
+  if amode == "concept-inputs":
+      yield from find_inputs(get_concept_id())
+  elif amode == "one-input":
+      #http://192.168.1.163:8502/?concept_id=python&app_id=Introspector-LLama2-Hackathon-Demo1&page_size=3&workflow=RakeItUpV3Critical_Reconstruction_of4&data_url=https%3A%2F%2Fdata.clarifai.com%2Forig%2Fusers%2Frxngfnlo5uhx%2Fapps%2FIntrospector-LLama2-Hackathon-Demo1%2Finputs%2Ftext%2Fe0062df82800d031e8a8bfc3a6b21213&
+      # input_id=f78ca91871b74e249033d5179e730dd9&mode=one-input
+      yield from get_input(get_input_id())
+  else:
+      st.write("something")
+#+END_EXAMPLE

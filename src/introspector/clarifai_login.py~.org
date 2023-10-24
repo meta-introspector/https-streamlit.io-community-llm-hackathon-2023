@@ -1,0 +1,9 @@
+PAT = st.secrets["CLARIFAI_PAT"] USER_ID =st.secrets["clarifai_user_id"]
+channel = ClarifaiChannel.get_grpc_channel() stub =
+service_pb2_grpc.V2Stub(channel) user_metadata = (('authorization',
+'Key' + PAT),)
+
+userDataObject= None def get_userDataObject(): global userDataObject if
+userDataObject is None: userDataObject =
+resources_pb2.UserAppIDSet(user_id=USER_ID, app_id=get_app_id()) return
+userDataObject

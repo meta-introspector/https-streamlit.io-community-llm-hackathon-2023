@@ -1,0 +1,41 @@
+import streamlit as st
+
+def list_input(title, choices, key, default_value): opt_index = 0 if
+default_value in choices: opt_index = choices.index(default_value)
+
+#+BEGIN_EXAMPLE
+  selected_choice = st.selectbox(
+      title,
+      choices,
+      key=key,
+      index=opt_index,
+  )
+
+  return selected_choice
+#+END_EXAMPLE
+
+```
+
+Now, you can use this =list_input= function to create list-based inputs.
+Here's how you can use it for your =get_concept= function:
+
+```python import streamlit as st from .columns import col_concept #
+Assuming you have a col_concept import from .list_input import
+list_input # Replace with the actual import path
+
+concept_choices = ["Concept1", "Concept2", "Concept3"] # Replace with
+your actual choices
+
+def get_concept_id(): return app_args['concept_id']
+
+def get_concept(): # Replace this part with your desired input logic
+selected_concept = list_input( "Select a Concept", concept_choices,
+key="concept-choice", default_value=params.get("concept_id", "python") )
+
+#+BEGIN_EXAMPLE
+  # Assuming col_concept is used for your layout
+  with col_concept:
+      # You can also add more inputs here if needed
+
+  return selected_concept
+#+END_EXAMPLE

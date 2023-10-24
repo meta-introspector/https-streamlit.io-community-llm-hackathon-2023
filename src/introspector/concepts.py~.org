@@ -1,0 +1,8 @@
+from .app_args import get_concept_id,params,app_args
+
+* 
+  :PROPERTIES:
+  :CUSTOM_ID: section
+  :END:
+
+def get_concept_id(): return app_args['concept_id']

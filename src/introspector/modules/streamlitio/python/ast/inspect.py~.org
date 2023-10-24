@@ -1,0 +1,30 @@
+import streamlit as st
+
+import ast def myprint(x): st.write(x)
+
+def visit_ast(node, depth=0): indent = " " * depth
+myprint(f"{indent}Type: {type(node).__name__}")
+
+#+BEGIN_EXAMPLE
+  for field_name, field_value in ast.iter_fields(node):
+      if isinstance(field_value, ast.AST):
+          myprint(f"{indent}{field_name}:")
+          visit_ast(field_value, depth + 1)
+      elif isinstance(field_value, list):
+          for item in field_value:
+              if isinstance(item, ast.AST):
+                  myprint(f"{indent}{field_name} (list item):")
+                  visit_ast(item, depth + 1)
+      else:
+          myprint(f"{indent}{field_name}: {field_value}")
+#+END_EXAMPLE
+
+expression = st.text_area("Enter an expression:")
+
+* Interpret and display the result when the user clicks a button
+  :PROPERTIES:
+  :CUSTOM_ID: interpret-and-display-the-result-when-the-user-clicks-a-button
+  :END:
+
+if st.button("Interpret"): tree = ast.parse(expression) result =
+visit_ast(tree) st.write("Interpreted Result:", result)

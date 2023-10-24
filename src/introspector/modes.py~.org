@@ -1,0 +1,5 @@
+class ConceptInputs(): pass class AllInputs(): pass class OneInputs():
+pass
+
+modes = { "concept-inputs" : ConceptInputs(), "all-inputs": AllInputs(),
+"one-input": OneInputs(), }

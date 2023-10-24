@@ -1,0 +1,165 @@
+. ./find_inputs.py~ ./ooda.py~ ./get_inputs.py~ ./generate-pdf
+./index.txt ./params.py~ ./clarifai_login.py~ ./app_args.py~
+./get_args.py~ ./columns.py~ ./observe.py~ ./do_apply.py~ ./concepts.py~
+./modes.py~ ./modules ./modules/streamlitio
+./modules/streamlitio/builder ./modules/streamlitio/builder/.dir.txt
+./modules/streamlitio/perspectives.txt
+./modules/streamlitio/perspectives.txt~ ./modules/streamlitio/selector
+./modules/streamlitio/selector/*pycache*
+./modules/streamlitio/selector/*pycache*/list_input.cpython-310.pyc
+./modules/streamlitio/selector/list_input.py~
+./modules/streamlitio/selector/.dir.txt ./modules/streamlitio/repl
+./modules/streamlitio/repl/.dir.txt
+./modules/streamlitio/repl/interpreter
+./modules/streamlitio/repl/interpreter/simple
+./modules/streamlitio/repl/interpreter/simple/read.py
+./modules/streamlitio/repl/interpreter/simple/read.py~
+./modules/streamlitio/grpc ./modules/streamlitio/grpc/oneof
+./modules/streamlitio/grpc/oneof/.dir.txt
+./modules/streamlitio/grpc/message
+./modules/streamlitio/grpc/message/fields
+./modules/streamlitio/grpc/message/fields/.dir.txt
+./modules/streamlitio/grpc/message/.dir.txt
+./modules/streamlitio/grpc/service
+./modules/streamlitio/grpc/service/input
+./modules/streamlitio/grpc/service/input/.dir.txt
+./modules/streamlitio/grpc/service/output
+./modules/streamlitio/grpc/service/output/.dir.txt
+./modules/streamlitio/grpc/service/.dir.txt
+./modules/streamlitio/grpc/enum ./modules/streamlitio/grpc/enum/value
+./modules/streamlitio/grpc/enum/value/.dir.txt
+./modules/streamlitio/grpc/enum/.dir.txt
+./modules/streamlitio/grpc/.dir.txt ./modules/streamlitio/python
+./modules/streamlitio/python/types
+./modules/streamlitio/python/types/dict
+./modules/streamlitio/python/types/dict/.dir.txt
+./modules/streamlitio/python/types/list
+./modules/streamlitio/python/types/list/.dir.txt
+./modules/streamlitio/python/types/int
+./modules/streamlitio/python/types/int/.dir.txt
+./modules/streamlitio/python/types/str
+./modules/streamlitio/python/types/str/.dir.txt
+./modules/streamlitio/python/types/.dir.txt
+./modules/streamlitio/python/build
+./modules/streamlitio/python/build/.dir.txt
+./modules/streamlitio/python/inspect
+./modules/streamlitio/python/inspect/source
+./modules/streamlitio/python/inspect/source/.dir.txt
+./modules/streamlitio/python/inspect/.dir.txt
+./modules/streamlitio/python/ast ./modules/streamlitio/python/ast/call
+./modules/streamlitio/python/ast/call/.dir.txt
+./modules/streamlitio/python/ast/moduledecl
+./modules/streamlitio/python/ast/moduledecl/.dir.txt
+./modules/streamlitio/python/ast/inspect.py~
+./modules/streamlitio/python/ast/ifexpr
+./modules/streamlitio/python/ast/ifexpr/.dir.txt
+./modules/streamlitio/python/ast/classdecl
+./modules/streamlitio/python/ast/classdecl/.dir.txt
+./modules/streamlitio/python/ast/functiondecl
+./modules/streamlitio/python/ast/functiondecl/.dir.txt
+./modules/streamlitio/python/ast/load
+./modules/streamlitio/python/ast/load/.dir.txt
+./modules/streamlitio/python/ast/inspect.py
+./modules/streamlitio/python/ast/.dir.txt
+./modules/streamlitio/python/git
+./modules/streamlitio/python/git/.dir.txt
+./modules/streamlitio/python/bytecode
+./modules/streamlitio/python/bytecode/.dir.txt
+./modules/streamlitio/python/source_code
+./modules/streamlitio/python/source_code/include
+./modules/streamlitio/python/source_code/include/.dir.txt
+./modules/streamlitio/python/source_code/.dir.txt
+./modules/streamlitio/python/globals
+./modules/streamlitio/python/globals/type
+./modules/streamlitio/python/globals/type/generate
+./modules/streamlitio/python/globals/type/generate/dialog
+./modules/streamlitio/python/globals/type/generate/dialog/.dir.txt
+./modules/streamlitio/python/globals/type/generate/preconditions
+./modules/streamlitio/python/globals/type/generate/preconditions/.dir.txt
+./modules/streamlitio/python/globals/type/generate/postconditions
+./modules/streamlitio/python/globals/type/generate/postconditions/.dir.txt
+./modules/streamlitio/python/globals/type/generate/.dir.txt
+./modules/streamlitio/python/globals/type/assign_emojis
+./modules/streamlitio/python/globals/type/assign_emojis/meaning
+./modules/streamlitio/python/globals/type/assign_emojis/meaning/directory
+./modules/streamlitio/python/globals/type/assign_emojis/meaning/directory/.dir.txt
+./modules/streamlitio/python/globals/type/assign_emojis/meaning/eigenvector
+./modules/streamlitio/python/globals/type/assign_emojis/meaning/eigenvector/.dir.txt
+./modules/streamlitio/python/globals/type/assign_emojis/meaning/.dir.txt
+./modules/streamlitio/python/globals/type/assign_emojis/layer
+./modules/streamlitio/python/globals/type/assign_emojis/layer/.dir.txt
+./modules/streamlitio/python/globals/type/assign_emojis/.dir.txt
+./modules/streamlitio/python/globals/type/.dir.txt
+./modules/streamlitio/python/globals/.dir.txt
+./modules/streamlitio/python/steps.txt
+./modules/streamlitio/python/project
+./modules/streamlitio/python/project/.dir.txt
+./modules/streamlitio/python/.dir.txt ./modules/streamlitio/directories
+./modules/streamlitio/directories/dict
+./modules/streamlitio/directories/dict/value.txt
+./modules/streamlitio/directories/dict/key.txt
+./modules/streamlitio/directories/dict/.dir.txt
+./modules/streamlitio/directories/config.py
+./modules/streamlitio/directories/emojis.yaml~
+./modules/streamlitio/directories/sets
+./modules/streamlitio/directories/sets/instances.txt
+./modules/streamlitio/directories/sets/instances.txt~
+./modules/streamlitio/directories/sets/.dir.txt
+./modules/streamlitio/directories/folders
+./modules/streamlitio/directories/folders/concepts.txt~
+./modules/streamlitio/directories/folders/concepts.txt
+./modules/streamlitio/directories/folders/.dir.txt
+./modules/streamlitio/directories/overview.txt~
+./modules/streamlitio/directories/overview.txt
+./modules/streamlitio/directories/lists
+./modules/streamlitio/directories/lists/elements.txt~
+./modules/streamlitio/directories/lists/elements.txt
+./modules/streamlitio/directories/lists/.dir.txt
+./modules/streamlitio/directories/config.py~
+./modules/streamlitio/directories/emojis.yaml
+./modules/streamlitio/directories/.dir.txt~
+./modules/streamlitio/perspectives
+./modules/streamlitio/perspectives/download_self.txt
+./modules/streamlitio/perspectives/rendering.txt
+./modules/streamlitio/perspectives/user.txt
+./modules/streamlitio/features.txt ./modules/streamlitio/linux
+./modules/streamlitio/linux/process
+./modules/streamlitio/linux/python_processes.txt
+./modules/streamlitio/linux/python_processes.txt/.dir.txt
+./modules/streamlitio/linux/.dir.txt ./modules/streamlitio/lists.txt
+./modules/streamlitio/git ./modules/streamlitio/git/interface.txt
+./modules/streamlitio/git/branch
+./modules/streamlitio/git/branch/.dir.txt
+./modules/streamlitio/git/submodules.txt
+./modules/streamlitio/git/commit
+./modules/streamlitio/git/commit/.dir.txt ./modules/streamlitio/git/tag
+./modules/streamlitio/git/tag/.dir.txt ./modules/streamlitio/git/version
+./modules/streamlitio/git/version/.dir.txt
+./modules/streamlitio/git/.dir.txt ./modules/streamlitio/messages
+./modules/streamlitio/messages/generate.txt
+./modules/streamlitio/messages/template.txt
+./modules/streamlitio/messages/template.txt~
+./modules/streamlitio/messages/generate.txt~
+./modules/streamlitio/interfaces.txt ./modules/streamlitio/github
+./modules/streamlitio/github/pul_request.txt~
+./modules/streamlitio/github/discussions
+./modules/streamlitio/github/discussions/.dir.txt
+./modules/streamlitio/github/pull_request.txt
+./modules/streamlitio/github/actions
+./modules/streamlitio/github/actions/.dir.txt
+./modules/streamlitio/github/wiki
+./modules/streamlitio/github/wiki/.dir.txt
+./modules/streamlitio/github/pul_request.txt
+./modules/streamlitio/github/issues
+./modules/streamlitio/github/issues/.dir.txt
+./modules/streamlitio/github/.dir.txt ./modules/streamlitio/emojis
+./modules/streamlitio/emojis/.dir.txt ./modules/model
+./modules/model/generator ./modules/model/generator/layers
+./modules/model/generator/layers/models
+./modules/model/generator/layers/resources
+./modules/model/generator/layers/templates
+./modules/model/generator/layers/source
+./modules/model/generator/layers/source/structure
+./modules/model/generator/layers/testing
+./modules/model/generator/layers/testing/notes.txt
+./modules/model/method.txt ./modules/model/method.txt~

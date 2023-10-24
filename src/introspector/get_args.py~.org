@@ -1,0 +1,11 @@
+def get_concept_id(): return app_args['concept_id']
+
+def get_input_id(): return app_args['input_id']
+
+def get_last_id(): return app_args['last_id']
+
+def get_mode(): return app_args['mode']
+
+def get_app_id(): return app_args['app_id']
+
+def get_page_size(): return app_args['page_size']
